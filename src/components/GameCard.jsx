@@ -127,16 +127,24 @@ const GameCard = memo(function GameCard({
 
   if (!game) return null;
 
+  const gameId = game.id || game._id;
+  const gameHref = `/game/${encodeURIComponent(gameId)}`;
+
   return (
-    <div
+    <a
+      href={gameHref}
       className={`sky-game-card game-card poki-game-card poki-tile-${effectiveVariant} ${isHovered ? 'is-card-hovered' : ''}`}
-      onClick={() => {
-        sounds.playClick();
-        onPlay(game);
+      onClick={(e) => {
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          e.preventDefault();
+          sounds.playClick();
+          onPlay(game);
+        }
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      title={game.title}
+      title={`Play ${game.title} Free Online`}
+      aria-label={`Play ${game.title} Free Online`}
     >
       <div className={`card-thumb-container ${!imgLoaded ? 'skeleton' : ''}`}>
         {/* Main Static Thumbnail with instant cache detection & priority loading */}
@@ -243,7 +251,7 @@ const GameCard = memo(function GameCard({
           </div>
         </div>
       </div>
-    </div>
+    </a>
   );
 });
 

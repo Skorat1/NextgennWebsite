@@ -86,16 +86,24 @@ function SidebarGameTile({ game, onPlay, isFirst }) {
     }
   };
 
+  const gameId = game?.id || game?._id;
+  const gameHref = `/game/${encodeURIComponent(gameId)}`;
+
   return (
-    <div
+    <a
+      href={gameHref}
       className={`crazy-sidebar-game-tile ${isFirst ? 'is-first-tile' : ''} ${isHovered ? 'is-hovered' : ''}`}
-      onClick={() => {
-        sounds.playClick();
-        onPlay(game);
+      onClick={(e) => {
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          e.preventDefault();
+          sounds.playClick();
+          onPlay(game);
+        }
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      title={game.title}
+      title={`Play ${game.title} Free Online`}
+      aria-label={`Play ${game.title} Free Online`}
     >
       {/* Ambient Blurred Backdrop */}
       <img
@@ -153,13 +161,11 @@ function SidebarGameTile({ game, onPlay, isFirst }) {
         />
       )}
 
-
-
       {/* Subtle Title Overlay on Hover */}
       <div className="crazy-sidebar-hover-bar">
         <span className="sidebar-hover-title">{game.title}</span>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -913,6 +919,52 @@ export default function GamePlayerView({
         />
       )}
 
+      {/* SEO Breadcrumb Navigation Bar */}
+      <nav aria-label="Breadcrumb" className="game-breadcrumb-nav" style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        fontSize: '0.80rem',
+        fontWeight: 600,
+        color: '#94a3b8',
+        marginBottom: '10px',
+        flexWrap: 'wrap'
+      }}>
+        <a
+          href="/"
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              e.preventDefault();
+              sounds.playClick();
+              onClose();
+            }
+          }}
+          style={{ color: '#cbd5e1', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          title="Back to All Games"
+        >
+          <span>Home</span>
+        </a>
+        <span style={{ opacity: 0.4 }}>/</span>
+        <a
+          href={`/category/${encodeURIComponent((game.category || 'Arcade').toLowerCase())}`}
+          onClick={(e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              e.preventDefault();
+              sounds.playClick();
+              onSelectCategory(game.category || 'Arcade');
+            }
+          }}
+          style={{ color: '#cbd5e1', textDecoration: 'none', textTransform: 'capitalize' }}
+          title={`Browse ${game.category || 'Arcade'} Games`}
+        >
+          <span>{game.category || 'Arcade'}</span>
+        </a>
+        <span style={{ opacity: 0.4 }}>/</span>
+        <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+          {game.title}
+        </span>
+      </nav>
+
       {/* 2. Main Game Player Stage (: Left Main Game Player Screen + Right Recommended Games Column) */}
       <div className={`crazy-stage-wrapper ${isTheaterMode ? 'theater-expanded' : ''} ${sizeMode === 'portrait' ? 'portrait-stage' : ''}`}>
 
@@ -1025,7 +1077,7 @@ export default function GamePlayerView({
               />
               <div className="sky-ctrl-meta">
                 <div className="sky-ctrl-title-row">
-                  <h2 className="sky-ctrl-title">{game.title}</h2>
+                  <h1 className="sky-ctrl-title">{game.title}</h1>
                 </div>
                 <span className="sky-ctrl-subtitle">
                   by {game.developer || game.author || (game.category ? game.category.toUpperCase() : 'SYBO')}
@@ -1074,6 +1126,18 @@ export default function GamePlayerView({
                 title="Reload Game"
               >
                 <RefreshCw size={19} className="sky-action-icon" />
+              </button>
+
+              {/* Theater Mode (Wide Cinema) */}
+              <button
+                className={`sky-action-btn ${isTheaterMode ? 'active-theater' : ''}`}
+                onClick={() => {
+                  sounds.playClick();
+                  setIsTheaterMode(prev => !prev);
+                }}
+                title={isTheaterMode ? "Default 16:9 View" : "Theater Mode (Wide Cinema)"}
+              >
+                <Tv size={19} className="sky-action-icon" />
               </button>
 
               {/* Fullscreen Trigger */}
@@ -1309,19 +1373,23 @@ export default function GamePlayerView({
                     >
                       {(game.category || 'Arcade').toUpperCase()}
                     </span>
-                    {game.tags && game.tags.slice(0, 8).map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="min-tag-pill"
-                        onClick={() => {
-                          sounds.playClick();
-                          if (onSelectCategory) onSelectCategory(tag.toLowerCase());
-                        }}
-                        title={`Browse #${tag} games`}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+                    {game.tags && game.tags.slice(0, 8).map((tag, idx) => {
+                      const cleanTag = String(tag || '').replace(/^#+/, '').trim();
+                      if (!cleanTag) return null;
+                      return (
+                        <span
+                          key={idx}
+                          className="min-tag-pill"
+                          onClick={() => {
+                            sounds.playClick();
+                            if (onSelectCategory) onSelectCategory(cleanTag.toLowerCase());
+                          }}
+                          title={`Browse ${cleanTag} games`}
+                        >
+                          {cleanTag}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

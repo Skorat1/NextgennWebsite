@@ -106,7 +106,7 @@ export default function AboutPage({ onBackToHome, onNavigate }) {
           </h1>
 
           <p className="about-hero-subtitle">
-            500+ free browser games with locked 60 FPS performance on any device.
+            5000+ free browser games with locked 60 FPS performance on any device.
           </p>
 
           <div className="about-chip-strip">
@@ -125,7 +125,7 @@ export default function AboutPage({ onBackToHome, onNavigate }) {
               }}
             >
               <Gamepad2 size={18} />
-              <span>Explore 500+ Games</span>
+              <span>Explore 5000+ Games</span>
               <ArrowRight size={16} />
             </button>
             <button
@@ -146,7 +146,7 @@ export default function AboutPage({ onBackToHome, onNavigate }) {
       <section className="about-stats-strip">
         <div className="about-stat-item stat-cyan">
           <div className="stat-icon-wrap"><Gamepad2 size={20} className="text-cyan" /></div>
-          <div className="stat-num">{STATS.totalGames || '500+'}</div>
+          <div className="stat-num">{STATS.totalGames || '5000+'}</div>
           <div className="stat-name">Games</div>
         </div>
         <div className="about-stat-item stat-purple">
@@ -262,7 +262,7 @@ export default function AboutPage({ onBackToHome, onNavigate }) {
             <span>INSTANT ARCADE</span>
           </div>
           <h2>Ready to Play?</h2>
-          <p>Jump straight into 500+ top-rated games. No account needed.</p>
+          <p>Jump straight into 5000+ top-rated games. No account needed.</p>
           <button
             className="about-primary-btn large"
             onClick={() => {

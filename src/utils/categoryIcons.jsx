@@ -112,47 +112,56 @@ export const CATEGORY_ID_TO_SVG = {
 
 /**
  * Render a clean Lucide SVG icon for a category — NEVER an emoji
+/**
+ * Safely resolves category image URLs to an absolute reachable URL
  */
-export function renderCategorySvgIcon(cat, size = 18) {
-  if (!cat) return <Gamepad2 size={size} />;
+export function getCategoryImageUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
 
-  // 0. Check if category has an uploaded image or image URL
-  const imgCandidate = cat.image || (typeof cat.icon === 'string' ? cat.icon.trim() : '');
   if (
-    imgCandidate &&
-    (imgCandidate.startsWith('http://') ||
-      imgCandidate.startsWith('https://') ||
-      imgCandidate.startsWith('data:image') ||
-      imgCandidate.startsWith('/uploads') ||
-      /\.(png|jpe?g|webp|svg|gif|avif)$/i.test(imgCandidate))
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:image') ||
+    trimmed.startsWith('blob:')
   ) {
-    const fullImgUrl = imgCandidate.startsWith('/uploads')
-      ? `${(typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE ? import.meta.env.VITE_API_BASE.replace(/\/api\/?$/, '') : 'http://localhost:5000')}${imgCandidate}`
-      : imgCandidate;
-
-    const displaySize = Math.max(size, 20);
-    return (
-      <img
-        src={fullImgUrl}
-        alt={cat.name || 'Category'}
-        className="category-pill-image-icon"
-        style={{
-          width: displaySize,
-          height: displaySize,
-          maxWidth: '100%',
-          maxHeight: '100%',
-          objectFit: 'contain',
-          borderRadius: 4,
-          display: 'inline-block',
-          verticalAlign: 'middle',
-          imageRendering: '-webkit-optimize-contrast'
-        }}
-        onError={(e) => {
-          e.currentTarget.style.display = 'none';
-        }}
-      />
-    );
+    return trimmed;
   }
+
+  // Prepend backend host if it's a relative path like /uploads/... or uploads/...
+  const backendBase = (
+    typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE
+      ? import.meta.env.VITE_API_BASE.replace(/\/api\/?$/, '')
+      : 'http://localhost:5000'
+  ).replace(/\/+$/, '');
+
+  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${backendBase}${cleanPath}`;
+}
+
+/**
+ * Checks if a string candidate represents an image rather than an icon name
+ */
+export function isCategoryImageUrl(str) {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim().toLowerCase();
+  return (
+    s.startsWith('http://') ||
+    s.startsWith('https://') ||
+    s.startsWith('data:image') ||
+    s.startsWith('blob:') ||
+    s.includes('/uploads/') ||
+    s.startsWith('uploads/') ||
+    /\.(png|jpe?g|webp|svg|gif|avif)$/i.test(s)
+  );
+}
+
+/**
+ * Clean Lucide SVG icon fallback for a category
+ */
+export function renderCategoryFallbackSvg(cat, size = 18) {
+  if (!cat) return <Gamepad2 size={size} />;
 
   // 1. If cat.icon is already a React Component
   if (typeof cat.icon === 'function') {
@@ -202,6 +211,45 @@ export function renderCategorySvgIcon(cat, size = 18) {
 }
 
 /**
+ * Component to render category image with smooth fallback to Lucide SVG on error
+ */
+export function CategoryImageWithFallback({ cat, size = 18, className = '' }) {
+  const [loadFailed, setLoadFailed] = React.useState(false);
+
+  const rawCandidate = cat?.image || (typeof cat?.icon === 'string' && isCategoryImageUrl(cat.icon) ? cat.icon.trim() : '');
+  const imageUrl = rawCandidate && !loadFailed ? getCategoryImageUrl(rawCandidate) : null;
+
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={cat?.name || 'Category'}
+        className={`category-pill-image-icon ${className}`.trim()}
+        loading="lazy"
+        decoding="async"
+        onError={() => setLoadFailed(true)}
+      />
+    );
+  }
+
+  return renderCategoryFallbackSvg(cat, size);
+}
+
+/**
+ * Render a clean category icon (uploaded 3D image badge if present, or crisp Lucide SVG vector icon)
+ */
+export function renderCategorySvgIcon(cat, size = 18) {
+  if (!cat) return <Gamepad2 size={size} />;
+
+  const rawCandidate = cat?.image || (typeof cat?.icon === 'string' && isCategoryImageUrl(cat.icon) ? cat.icon.trim() : '');
+  if (rawCandidate) {
+    return <CategoryImageWithFallback cat={cat} size={size} />;
+  }
+
+  return renderCategoryFallbackSvg(cat, size);
+}
+
+/**
  * Counts how many active games belong to a given category
  */
 export function getGameCountForCategory(cat, games = []) {
@@ -248,9 +296,9 @@ export function getGameCountForCategory(cat, games = []) {
     const matchesTag = gTags.some(t => {
       const tSlug = t.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       return (
-        (catId && t === catId) || 
-        (catSlug && tSlug === catSlug) || 
-        (catName && t === catName) || 
+        (catId && t === catId) ||
+        (catSlug && tSlug === catSlug) ||
+        (catName && t === catName) ||
         (catId && t.includes(catId)) ||
         (catId.length > 3 && catId.includes(t))
       );

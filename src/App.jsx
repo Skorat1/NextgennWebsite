@@ -23,6 +23,7 @@ import { filterCategoriesWithGames } from './utils/categoryIcons';
 import { sounds } from './utils/audio';
 import { CONFIG } from './config';
 import { gamesApi, categoriesApi, cloudSyncApi } from './services/api';
+import { updatePageSeo, buildGameSchema } from './utils/seo';
 
 const { STORAGE_KEYS } = CONFIG;
 
@@ -170,6 +171,8 @@ function parseUrlNavState() {
       } else if (prefix === 'search') {
         search = val || search;
         page = 'home';
+      } else if (prefix === 'blog') {
+        page = 'blog';
       }
     }
 
@@ -185,6 +188,9 @@ function parseUrlNavState() {
         if (hPrefix === 'category') {
           category = hVal;
           page = 'home';
+        }
+        if (hPrefix === 'blog') {
+          page = 'blog';
         }
       }
     }
@@ -527,6 +533,94 @@ function App() {
     }
   }, [initialNav]);
 
+  // Real-time SEO Dynamic Sync (Title, Meta Descriptions, Canonical, OG, Twitter & JSON-LD)
+  useEffect(() => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nextgenn.com';
+
+    if (selectedGame) {
+      const canonical = `${origin}/game/${encodeURIComponent(selectedGame.id || selectedGame._id)}`;
+      const gameDesc = selectedGame.description
+        ? (selectedGame.description.length > 160 ? `${selectedGame.description.slice(0, 157)}...` : selectedGame.description)
+        : `Play ${selectedGame.title} free online in your browser on NextGenn. Fast, responsive ${selectedGame.category || 'Arcade'} game. No downloads needed.`;
+
+      updatePageSeo({
+        title: `Play ${selectedGame.title} Free Online`,
+        description: gameDesc,
+        keywords: `${selectedGame.title}, play ${selectedGame.title}, ${selectedGame.category || 'arcade'} games, free online games, browser games, nextgenn`,
+        canonicalUrl: canonical,
+        image: selectedGame.thumbnail,
+        type: 'game',
+        jsonLd: buildGameSchema(selectedGame)
+      });
+      return;
+    }
+
+    if (activeCategory && activeCategory !== 'all') {
+      const catName = activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
+      const canonical = `${origin}/category/${encodeURIComponent(activeCategory.toLowerCase())}`;
+      updatePageSeo({
+        title: `${catName} Games - Play Free Online`,
+        description: `Explore and play the top free online ${catName} games on NextGenn. Instant gameplay on mobile, desktop, and tablets with zero downloads.`,
+        keywords: `${catName} games, play ${catName} games, free online ${catName} games, browser games, nextgenn`,
+        canonicalUrl: canonical,
+        type: 'website',
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: `${catName} Games`,
+          description: `Top rated free online ${catName} games on NextGenn.`,
+          url: canonical
+        }
+      });
+      return;
+    }
+
+    if (activePage && activePage !== 'home') {
+      const pageTitles = {
+        trending: 'Trending Games - Play Popular Online Games',
+        'most-played': 'Most Played Games - Top Browser Games',
+        'top-rated': 'Top Rated Games - Highest Rated Online Games',
+        new: 'New Games - Latest Free Online Games',
+        about: 'About NextGenn - Instant Browser Gaming Platform',
+        faq: 'Frequently Asked Questions (FAQ) - NextGenn',
+        blog: 'Gaming News & Articles - NextGenn Blog',
+        developers: 'Developer Portal - Submit Your HTML5 Game to NextGenn',
+        privacy: 'Privacy Policy - NextGenn',
+        terms: 'Terms of Service - NextGenn',
+        contact: 'Contact Us - NextGenn',
+        disclaimer: 'Disclaimer - NextGenn'
+      };
+
+      const title = pageTitles[activePage] || `${activePage.charAt(0).toUpperCase() + activePage.slice(1)} - NextGenn`;
+      const canonical = `${origin}/${encodeURIComponent(activePage)}`;
+      updatePageSeo({
+        title,
+        description: `Explore ${title} on NextGenn - the leading instant browser gaming platform.`,
+        canonicalUrl: canonical,
+        type: 'website'
+      });
+      return;
+    }
+
+    if (searchQuery) {
+      updatePageSeo({
+        title: `Search: "${searchQuery}" Games`,
+        description: `Search results for "${searchQuery}" games on NextGenn. Play free instant games online.`,
+        canonicalUrl: `${origin}/?q=${encodeURIComponent(searchQuery)}`,
+        type: 'website'
+      });
+      return;
+    }
+
+    // Default Home SEO
+    updatePageSeo({
+      title: null,
+      description: null,
+      canonicalUrl: `${origin}/`,
+      type: 'website'
+    });
+  }, [selectedGame, activeCategory, activePage, searchQuery]);
+
   const handleToggleFavorite = useCallback((gameId) => {
     setFavorites(prev => {
       const exists = prev.some(id => String(id) === String(gameId));
@@ -601,19 +695,22 @@ function App() {
   const handleTagSearch = useCallback((query) => {
     setSelectedGame(null);
     setPendingGameId(null);
-    const q = (query || '').toLowerCase().trim();
-    const matched = categories.find(c => {
-      const cId = (c.id || c._id || '').toLowerCase().trim();
-      const cName = (c.name || '').toLowerCase().trim();
-      return cId === q || cName === q;
+    const toClean = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const qClean = toClean(query);
+
+    const matched = availableCategories.find(c => {
+      const cId = toClean(c.id || c._id);
+      const cName = toClean(c.name);
+      return (cId && cId === qClean) || (cName && cName === qClean);
     });
 
     if (matched) {
-      setActiveCategory(matched.id || matched._id);
+      const targetCat = matched.id || matched._id || matched.name;
+      setActiveCategory(targetCat);
       setSearchQuery('');
       setActivePage('home');
-      const targetUrl = buildNavUrl(null, matched.id || matched._id, 'home', '');
-      window.history.pushState({ gameId: null, category: matched.id || matched._id, page: 'home' }, '', targetUrl);
+      const targetUrl = buildNavUrl(null, targetCat, 'home', '');
+      window.history.pushState({ gameId: null, category: targetCat, page: 'home' }, '', targetUrl);
     } else {
       setActiveCategory('');
       setSearchQuery(query);
@@ -622,7 +719,7 @@ function App() {
       window.history.pushState({ gameId: null, category: '', page: 'home' }, '', targetUrl);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [categories]);
+  }, [availableCategories]);
 
   const displayedGames = useMemo(() => {
     let list = Array.isArray(activeGames) ? [...activeGames] : [];
@@ -639,29 +736,49 @@ function App() {
     }
 
     if (activeCategory && activeCategory !== 'all') {
-      const catKey = activeCategory.toLowerCase().trim();
-      const is2p = catKey === 'multiplayer' || catKey === '2-player' || catKey === '2player';
-      const matchedCat = categories.find(cat => {
-        const cId = (cat.id || cat._id || '').toLowerCase().trim();
-        const cName = (cat.name || '').toLowerCase().trim();
-        return cId === catKey || cName === catKey;
+      const toClean = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanKey = toClean(activeCategory);
+      const is2p = cleanKey === 'multiplayer' || cleanKey === '2player' || cleanKey === '2p' || cleanKey === 'twoplayer';
+
+      const matchedCat = availableCategories.find(cat => {
+        const cId = toClean(cat.id || cat._id);
+        const cName = toClean(cat.name);
+        return (cId && cId === cleanKey) || (cName && cName === cleanKey);
       });
-      const catName = (matchedCat?.name || '').toLowerCase().trim();
+      const matchedCleanName = matchedCat ? toClean(matchedCat.name) : '';
 
       list = list.filter(g => {
         if (!g) return false;
-        const c = (g.category || '').toLowerCase().trim();
+        const rawCat = g.category || '';
+        const gCatClean = toClean(rawCat);
+        const gCatSplits = rawCat.split(/[,/|]+/).map(s => toClean(s)).filter(Boolean);
+
         const gTags = Array.isArray(g.tags)
-          ? g.tags.map(t => (typeof t === 'string' ? t.toLowerCase().trim() : ''))
-          : (typeof g.tags === 'string' ? g.tags.toLowerCase().split(',').map(t => t.trim()) : []);
+          ? g.tags.map(t => (typeof t === 'string' ? toClean(t) : ''))
+          : (typeof g.tags === 'string' ? g.tags.split(/[,/|]+/).map(t => toClean(t)) : []);
 
         const matches2p = is2p && (
-          c.includes('2') || c.includes('multiplayer') || c.includes('two') ||
+          gCatClean.includes('2') || gCatClean.includes('multiplayer') || gCatClean.includes('two') ||
           gTags.some(t => t.includes('2') || t.includes('multiplayer') || t.includes('two'))
         );
 
-        const matchesCat = c === catKey || (catName && c === catName) || (catKey.length > 3 && c.includes(catKey));
-        const matchesTag = gTags.some(t => t === catKey || (catName && t === catName) || (catKey.length > 3 && t.includes(catKey)));
+        const matchesCat = (
+          gCatClean === cleanKey ||
+          (matchedCleanName && gCatClean === matchedCleanName) ||
+          gCatSplits.includes(cleanKey) ||
+          (matchedCleanName && gCatSplits.includes(matchedCleanName)) ||
+          (cleanKey.length >= 3 && gCatClean.includes(cleanKey)) ||
+          (cleanKey.length >= 3 && cleanKey.includes(gCatClean))
+        );
+
+        const matchesTag = gTags.some(t => {
+          return (
+            t === cleanKey ||
+            (matchedCleanName && t === matchedCleanName) ||
+            (cleanKey.length >= 3 && t.includes(cleanKey)) ||
+            (cleanKey.length >= 3 && cleanKey.includes(t))
+          );
+        });
 
         return matchesCat || matchesTag || matches2p;
       });
@@ -680,7 +797,7 @@ function App() {
     }
 
     return list;
-  }, [activeGames, activePage, activeCategory, searchQuery, recentlyPlayed, categories]);
+  }, [activeGames, activePage, activeCategory, searchQuery, recentlyPlayed, availableCategories]);
 
   return (
     <div className="sky-app-root sky-theme-root gamepix-app-layout">
@@ -802,6 +919,8 @@ function App() {
                 <BlogPage
                   onBackToHome={() => handleNavigation('home')}
                   onNavigate={handleNavigation}
+                  onPlayGame={handlePlayGame}
+                  allGames={activeGames}
                 />
               </Suspense>
             ) : activePage === 'faq' ? (
@@ -823,8 +942,11 @@ function App() {
                     activePage === 'most-played' ? 'Most Played Games' :
                       activePage === 'top-rated' ? 'Top Rated Games' :
                         activePage === 'new' ? 'New Additions' :
-                          activePage === 'recently-played' ? 'Recently Played' :
-                            activeCategory ? `${activeCategory.toUpperCase()} GAMES` :
+                            activeCategory ? `${(availableCategories.find(c => {
+                              const toClean = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                              const acClean = toClean(activeCategory);
+                              return toClean(c.id || c._id) === acClean || toClean(c.name) === acClean;
+                            })?.name || activeCategory).toUpperCase()} GAMES` :
                               ''
                 }
                 games={displayedGames}

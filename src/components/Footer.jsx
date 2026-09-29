@@ -292,7 +292,7 @@ export default function Footer({
           </div>
 
           <p className="pro-footer-tagline">
-            NextGenn is a curated browser-based gaming platform offering 500+ free-to-play HTML5 and WebGL titles across action, racing, multiplayer, puzzle, and more — accessible instantly on any device, with no downloads required.
+            NextGenn is a curated browser-based gaming platform offering 5000+ free-to-play HTML5 and WebGL titles across action, racing, multiplayer, puzzle, and more — accessible instantly on any device, with no downloads required.
           </p>
 
 
@@ -353,12 +353,22 @@ export default function Footer({
 
               return (
                 <li key={cat.id || idx}>
-                  <button className={`pro-footer-nav-link ${isCatActive ? 'active' : ''}`} onClick={() => navCategory(cat.id)}>
+                  <a
+                    href={`/category/${encodeURIComponent(cat.id || '')}`}
+                    className={`pro-footer-nav-link ${isCatActive ? 'active' : ''}`}
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                        e.preventDefault();
+                        navCategory(cat.id);
+                      }
+                    }}
+                    title={`Play ${cat.name} Games`}
+                  >
                     <span className="pro-footer-nav-icon-box" style={{ color: iconColor }}>
                       <CatIcon size={15} strokeWidth={2.2} />
                     </span>
                     <span>{cat.name}</span>
-                  </button>
+                  </a>
                 </li>
               );
             })}
@@ -370,40 +380,61 @@ export default function Footer({
           <h4 className="pro-footer-nav-title">Discover</h4>
           <ul className="pro-footer-nav-list">
             <li>
-              <button 
+              <a 
+                href="/trending"
                 className={`pro-footer-nav-link ${activePage === 'trending' && !activeCategory ? 'active' : ''}`} 
-                onClick={() => navPage('trending')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('trending');
+                  }
+                }}
+                title="Trending Games"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#ef4444' }}>
                   <Flame size={15} strokeWidth={2.2} />
                 </span>
                 <span>Trending Now</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button 
+              <a 
+                href="/top-rated"
                 className={`pro-footer-nav-link ${(activePage === 'top-rated' || activePage === 'most-played') && !activeCategory ? 'active' : ''}`} 
-                onClick={() => navPage('top-rated')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('top-rated');
+                  }
+                }}
+                title="Top Rated Games"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#f59e0b' }}>
                   <Star size={15} strokeWidth={2.2} />
                 </span>
                 <span>Top Rated Games</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button 
+              <a 
+                href="/new"
                 className={`pro-footer-nav-link ${activePage === 'new' && !activeCategory ? 'active' : ''}`} 
-                onClick={() => navPage('new')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('new');
+                  }
+                }}
+                title="New Games"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#10b981' }}>
                   <Sparkles size={15} strokeWidth={2.2} />
                 </span>
                 <span>New Additions</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button className="pro-footer-nav-link" onClick={handleSurprise}>
+              <button type="button" className="pro-footer-nav-link" onClick={handleSurprise} title="Random Game Discovery">
                 <span className="pro-footer-nav-icon-box" style={{ color: '#ec4899' }}>
                   <Dices size={15} strokeWidth={2.2} />
                 </span>
@@ -411,15 +442,22 @@ export default function Footer({
               </button>
             </li>
             <li>
-              <button 
+              <a 
+                href="/"
                 className={`pro-footer-nav-link ${(activePage === 'home' || !activePage) && !activeCategory ? 'active' : ''}`} 
-                onClick={() => navPage('home')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('home');
+                  }
+                }}
+                title="Browse All Games"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#3b82f6' }}>
                   <Gamepad2 size={15} strokeWidth={2.2} />
                 </span>
                 <span>Browse All Games</span>
-              </button>
+              </a>
             </li>
           </ul>
         </div>
@@ -429,100 +467,148 @@ export default function Footer({
           <h4 className="pro-footer-nav-title">Company & Legal</h4>
           <ul className="pro-footer-nav-list">
             <li>
-              <button
-                type="button"
+              <a
+                href="/about"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('about')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('about');
+                  }
+                }}
+                title="About NextGenn"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#6366f1' }}>
                   <Info size={15} strokeWidth={2.2} />
                 </span>
                 <span>About Us</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/developers"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('developers')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('developers');
+                  }
+                }}
+                title="Developer Submissions"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#ec4899' }}>
                   <Rocket size={15} strokeWidth={2.2} />
                 </span>
                 <span>Developer Submissions</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/privacy"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('privacy')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('privacy');
+                  }
+                }}
+                title="Privacy Policy"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#84cc16' }}>
                   <Shield size={15} strokeWidth={2.2} />
                 </span>
                 <span>Privacy Policy</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/terms"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('terms')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('terms');
+                  }
+                }}
+                title="Terms of Service"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#14b8a6' }}>
                   <FileText size={15} strokeWidth={2.2} />
                 </span>
                 <span>Terms of Service</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/disclaimer"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('disclaimer')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('disclaimer');
+                  }
+                }}
+                title="Platform Disclaimer"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#f59e0b' }}>
                   <AlertCircle size={15} strokeWidth={2.2} />
                 </span>
                 <span>Disclaimer</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/contact"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('contact')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('contact');
+                  }
+                }}
+                title="Contact Support"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#06b6d4' }}>
                   <Mail size={15} strokeWidth={2.2} />
                 </span>
                 <span>Contact &amp; Support</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/blog"
                 className="pro-footer-nav-link"
-                onClick={() => navPage('blog')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('blog');
+                  }
+                }}
+                title="Gaming Articles & Guides"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#8b5cf6' }}>
                   <Newspaper size={15} strokeWidth={2.2} />
                 </span>
                 <span>Blog &amp; Guides</span>
-              </button>
+              </a>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href="/faq"
                 className={`pro-footer-nav-link ${activePage === 'faq' && !activeCategory ? 'active' : ''}`}
-                onClick={() => navPage('faq')}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navPage('faq');
+                  }
+                }}
+                title="Frequently Asked Questions"
               >
                 <span className="pro-footer-nav-icon-box" style={{ color: '#0ea5e9' }}>
                   <HelpCircle size={15} strokeWidth={2.2} />
                 </span>
                 <span>FAQ &amp; Help</span>
-              </button>
+              </a>
             </li>
           </ul>
         </div>

@@ -79,6 +79,7 @@ const GameGrid = memo(function GameGrid({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const isPointerDown = useRef(false);
   const dragStartX = useRef(0);
   const dragScrollLeft = useRef(0);
   const hasDragged = useRef(false);
@@ -132,27 +133,35 @@ const GameGrid = memo(function GameGrid({
     if (e.button !== 0) return;
     const el = scrollContainerRef.current;
     if (!el) return;
-    setIsDragging(true);
+    isPointerDown.current = true;
     hasDragged.current = false;
     dragStartX.current = e.pageX - el.offsetLeft;
     dragScrollLeft.current = el.scrollLeft;
   };
 
   const handleMouseMove = (e) => {
-    if (!isDragging) return;
+    if (!isPointerDown.current) return;
     const el = scrollContainerRef.current;
     if (!el) return;
-    e.preventDefault();
     const x = e.pageX - el.offsetLeft;
-    const walk = (x - dragStartX.current) * 1.5;
-    if (Math.abs(walk) > 6) {
+    const diff = Math.abs(x - dragStartX.current);
+    if (diff > 8) {
+      if (!isDragging) setIsDragging(true);
       hasDragged.current = true;
+      e.preventDefault();
+      const walk = (x - dragStartX.current) * 1.4;
+      el.scrollLeft = dragScrollLeft.current - walk;
     }
-    el.scrollLeft = dragScrollLeft.current - walk;
   };
 
   const handleMouseUpOrLeave = () => {
-    setIsDragging(false);
+    isPointerDown.current = false;
+    if (isDragging) {
+      setIsDragging(false);
+    }
+    setTimeout(() => {
+      hasDragged.current = false;
+    }, 120);
   };
 
   // Auto-scroll active category pill into center view
@@ -198,12 +207,15 @@ const GameGrid = memo(function GameGrid({
             onMouseLeave={handleMouseUpOrLeave}
           >
             {quickCatList.map(cat => {
-              const catIdNorm = (cat.id || cat._id || '').toLowerCase().trim();
-              const activeCatNorm = (activeCategory || '').toLowerCase().trim();
-              const isAllCat = catIdNorm === 'all' || catIdNorm === '';
+              const toClean = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const cleanId = toClean(cat.id || cat._id);
+              const cleanName = toClean(cat.name);
+              const cleanActive = toClean(activeCategory);
+
+              const isAllCat = cleanId === 'all' || cleanId === '' || cleanName === 'allgames';
               const isActive = isAllCat
-                ? (!activeCatNorm || activeCatNorm === 'all')
-                : (activeCatNorm === catIdNorm || (cat.name && activeCatNorm === cat.name.toLowerCase().trim()));
+                ? (!cleanActive || cleanActive === 'all')
+                : (cleanActive === cleanId || cleanActive === cleanName);
 
               const rawColor = cat.color || (isAllCat ? '#10b981' : '#3b82f6');
               const catColor = getDimmedCategoryColor(rawColor);
@@ -212,7 +224,8 @@ const GameGrid = memo(function GameGrid({
 
               return (
                 <button
-                  key={cat.id || cat._id || 'all'}
+                  key={cat.id || cat._id || cat.name || 'all'}
+                  type="button"
                   className={`category-quick-pill ${isActive ? 'active' : ''}`}
                   style={{
                     '--cat-color': catColor,
@@ -232,7 +245,10 @@ const GameGrid = memo(function GameGrid({
                       return;
                     }
                     sounds.playClick();
-                    if (onSelectCategory) onSelectCategory(isAllCat ? '' : (cat.id || cat._id));
+                    const targetCatId = isAllCat ? '' : (cat.id || cat._id || cat.name || '');
+                    if (onSelectCategory) {
+                      onSelectCategory(targetCatId);
+                    }
                   }}
                 >
                   <span
@@ -269,13 +285,13 @@ const GameGrid = memo(function GameGrid({
       {(games.length > 0 || searchQuery || (activeCategory && activeCategory !== 'all')) && (
         <div className={`grid-header-row ${searchQuery ? 'is-search-result' : ''}`}>
           <div className="grid-title-group">
-            <h2 className="grid-main-title sky-brand-heading">
+            <h1 className="grid-main-title sky-brand-heading">
               {searchQuery ? (
                 <>Search Results for: <span className="highlight-text">"{searchQuery}"</span></>
               ) : (
                 title || (activeCategory ? `${activeCategory.toUpperCase()} GAMES` : 'All Games')
               )}
-            </h2>
+            </h1>
             {games.length > 0 && (
               <span style={{
                 fontSize: '0.78rem', color: '#64748b', fontWeight: '600',

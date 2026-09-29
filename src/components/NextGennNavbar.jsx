@@ -62,7 +62,7 @@ const NextGennNavbar = memo(function NextGennNavbar({
               ref={mobileSearchInputRef}
               type="text"
               className="sky-mobile-search-input"
-              placeholder="Search 500+ games..."
+              placeholder="Search 5000+ games..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search games"
@@ -142,21 +142,28 @@ const NextGennNavbar = memo(function NextGennNavbar({
                   )}
 
                   {/* 2. Standalone Advanced Brand Logo */}
-                  <div
+                  <a
+                    href="/"
                     className="sky-standalone-logo"
-                    onClick={() => {
-                      sounds.playClick();
-                      onSelectCategory('');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                        e.preventDefault();
+                        sounds.playClick();
+                        onSelectCategory('');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
                     }}
-                    title="NextGenn Arcade - Home"
+                    title="NextGenn Games - Home"
+                    aria-label="NextGenn Free Online Games"
                   >
                     <img
                       src="/nextgenn-full.png"
-                      alt="NextGenn"
+                      alt="NextGenn - Free Online Games"
                       className="sky-navbar-brand-full-img"
+                      width="160"
+                      height="40"
                     />
-                  </div>
+                  </a>
                 </div>
               </div>
 
@@ -170,7 +177,7 @@ const NextGennNavbar = memo(function NextGennNavbar({
                   ref={searchInputRef}
                   type="text"
                   className="sky-advanced-search-input"
-                  placeholder="Search 500+ games, action, racing, 2-player..."
+                  placeholder="Search 5000+ games, action, racing, 2-player..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsFocused(true)}

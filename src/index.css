@@ -1347,6 +1347,11 @@ select,
 
 .quick-cat-scroll-bar.is-dragging .category-quick-pill {
   cursor: grabbing !important;
+}
+
+.category-quick-pill .pill-icon-container,
+.category-quick-pill .pill-name-text,
+.category-quick-pill svg {
   pointer-events: none;
 }
 
@@ -1466,28 +1471,43 @@ select,
 
 .category-quick-pill .pill-icon-container,
 .category-pill-btn .pill-icon-container {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
 }
 
 .category-quick-pill:hover .pill-icon-container,
 .category-pill-btn:hover .pill-icon-container {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .category-quick-pill .category-pill-image-icon,
-.category-pill-btn .category-pill-image-icon {
-  width: 20px;
-  height: 20px;
+.category-pill-btn .category-pill-image-icon,
+.gamepix-side-icon-box .category-pill-image-icon {
+  width: 26px;
+  height: 26px;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.16));
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  pointer-events: none;
+}
+
+.category-quick-pill:hover .category-pill-image-icon,
+.category-pill-btn:hover .category-pill-image-icon {
+  transform: scale(1.12);
 }
 
 .category-quick-pill .pill-name-text {
@@ -1841,6 +1861,9 @@ select,
 .game-card,
 .sky-game-card,
 .poki-game-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
   background: #0b0f19;
   border: 1.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
@@ -2548,10 +2571,13 @@ select,
   position: relative;
   inset: 0px;
   width: 100%;
-  height: 480px;
-  max-height: 58vh;
-  min-height: 380px;
-  display: block;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 400px;
+  max-height: calc(88vh - 85px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   touch-action: none;
   cursor: inherit;
   filter: saturate(1.24);
@@ -2564,16 +2590,19 @@ select,
 }
 
 .crazy-screen-viewport.is-large {
-  height: 560px;
-  max-height: 70vh;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: calc(90vh - 75px);
 }
 
 .crazy-screen-viewport.is-portrait {
   width: 100%;
-  max-width: 100%;
-  height: 540px;
-  max-height: 72vh;
+  max-width: 480px;
+  aspect-ratio: 9 / 16;
+  height: auto;
   min-height: 440px;
+  max-height: 82vh;
   margin: 0 auto;
 }
 
@@ -2582,9 +2611,11 @@ select,
 }
 
 .crazy-screen-viewport.is-theater {
+  width: 100%;
   max-width: 100%;
-  height: calc(92vh - 100px);
-  max-height: 820px;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: calc(92vh - 90px);
 }
 
 .sky-action-btn.active-mode {
@@ -2611,18 +2642,25 @@ select,
 @media (max-width: 1080px) {
   .crazy-screen-viewport {
     width: 100%;
-    max-width: 100%;
-    height: 440px;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    min-height: 340px;
+    max-height: 75vh;
   }
 }
 
 @media (max-width: 768px) {
   .crazy-screen-viewport {
     width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    min-height: 240px;
+    max-height: 72vh;
+  }
+  .crazy-screen-viewport.is-portrait {
     max-width: 100%;
-    height: clamp(520px, calc(100dvh - 185px), 680px);
-    min-height: 540px;
-    max-height: 82vh;
+    aspect-ratio: 9 / 16;
+    max-height: 80vh;
   }
 }
 
@@ -2854,22 +2892,25 @@ select,
   position: relative;
   z-index: 5;
   background: #ffffff !important;
-  padding: 12px 20px;
+  padding: 12px clamp(12px, 1.8vw, 20px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   border: 1px solid #e2e8f0;
   border-top: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 0 0 20px 20px;
-  min-height: 64px;
+  min-height: 60px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .sky-ctrl-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
+  flex: 1 1 240px;
 }
 
 .sky-ctrl-thumb {
@@ -2898,7 +2939,7 @@ select,
 
 .sky-ctrl-title {
   font-family: var(--font-main, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.2px;
@@ -2906,7 +2947,7 @@ select,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 480px;
+  max-width: clamp(160px, 35vw, 480px);
 }
 
 .sky-ctrl-sub-row {
@@ -2927,8 +2968,9 @@ select,
 .sky-ctrl-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: clamp(6px, 1vw, 12px);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .sky-action-btn {
@@ -11643,14 +11685,14 @@ select,
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
   position: relative;
   transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .crazy-stage-wrapper.portrait-stage {
-  max-width: 960px;
+  max-width: 540px;
 }
 
 .crazy-stage-wrapper.theater-expanded {
@@ -11741,6 +11783,8 @@ select,
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* First card in Play Next has the crisp cyan/blue outline */

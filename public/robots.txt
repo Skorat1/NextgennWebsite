@@ -1,0 +1,12 @@
+# NextGenn Games Portal Robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /uploads/temp/
+
+# Crawl-delay for polite scraping
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://nextgenn.com/sitemap.xml

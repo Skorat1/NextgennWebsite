@@ -245,13 +245,21 @@ export default function Sidebar({
             {mainNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePage === item.id && !activeCategory && !item.isAction;
+              const href = item.isAction ? '#' : (item.id === 'home' ? '/' : `/${item.id}`);
 
               return (
-                <button
+                <a
                   key={item.id}
+                  href={href}
                   className={`gamepix-side-item ${isActive ? 'active' : ''}`}
-                  onClick={() => handleNavClick(item)}
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      handleNavClick(item);
+                    }
+                  }}
                   title={item.label}
+                  aria-label={item.label}
                 >
                   <div className="gamepix-side-icon-box" style={{ color: item.color }}>
                     <Icon size={20} className={item.id === 'favorites' && favoritesCount > 0 ? 'fill-fav' : ''} />
@@ -262,7 +270,7 @@ export default function Sidebar({
                       {item.badge}
                     </span>
                   )}
-                </button>
+                </a>
               );
             })}
           </div>
@@ -281,20 +289,28 @@ export default function Sidebar({
               const activeCatNorm = (activeCategory || '').toLowerCase().trim();
               const isActive = activeCatNorm === catIdNorm || (cat.name && activeCatNorm === cat.name.toLowerCase().trim());
               const catColor = getDimmedCategoryColor(cat.color || '#2563eb');
+              const catHref = `/category/${encodeURIComponent(cat.id || cat._id)}`;
 
               return (
-                <button
+                <a
                   key={cat.id || cat._id}
+                  href={catHref}
                   className={`gamepix-side-item category-item ${isActive ? 'active' : ''}`}
-                  onClick={() => handleCategoryClick(cat.id || cat._id)}
-                  title={cat.name}
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      handleCategoryClick(cat.id || cat._id);
+                    }
+                  }}
+                  title={`Play Free ${cat.name} Games`}
+                  aria-label={`${cat.name} Games`}
                 >
                   <div className="gamepix-side-icon-box" style={{ color: catColor }}>
                     {renderCategorySvgIcon(cat, 19)}
                   </div>
                   <span className="gamepix-side-label" style={{ textTransform: 'capitalize' }}>{cat.name}</span>
                   <ChevronRight size={14} className="gamepix-side-chevron" />
-                </button>
+                </a>
               );
             })}
           </div>
@@ -305,41 +321,107 @@ export default function Sidebar({
           {/* Integrated Sidebar Footer Section (Developer + Legal + Live Status) */}
           <div className="sidebar-footer-block">
             {/* Developer Button */}
-            <button
+            <a
+              href="/developers"
               className={`sidebar-dev-action-btn ${activePage === 'developers' ? 'active' : ''}`}
-              onClick={() => handleFooterLinkClick('developers')}
-              title="Publish Your Game"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                  e.preventDefault();
+                  handleFooterLinkClick('developers');
+                }
+              }}
+              title="Publish Your Game on NextGenn"
             >
               <Rocket size={17} className="text-cyan" />
               <span>Submit Game</span>
-            </button>
+            </a>
 
             {/* Quick Links Group */}
             <div className="sidebar-links-group">
-              <button onClick={() => handleFooterLinkClick('about')} className="sidebar-mini-link" title="About NextGenn">
+              <a
+                href="/about"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('about');
+                  }
+                }}
+                className="sidebar-mini-link"
+                title="About NextGenn"
+              >
                 <Info size={13} />
                 <span>About</span>
-              </button>
-              <button onClick={() => handleFooterLinkClick('privacy')} className="sidebar-mini-link" title="Privacy Policy">
+              </a>
+              <a
+                href="/privacy"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('privacy');
+                  }
+                }}
+                className="sidebar-mini-link"
+                title="Privacy Policy"
+              >
                 <Shield size={13} />
                 <span>Privacy</span>
-              </button>
-              <button onClick={() => handleFooterLinkClick('terms')} className="sidebar-mini-link" title="Terms of Service">
+              </a>
+              <a
+                href="/terms"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('terms');
+                  }
+                }}
+                className="sidebar-mini-link"
+                title="Terms of Service"
+              >
                 <FileText size={13} />
                 <span>Terms</span>
-              </button>
-              <button onClick={() => handleFooterLinkClick('disclaimer')} className="sidebar-mini-link" title="Legal Disclaimer">
+              </a>
+              <a
+                href="/disclaimer"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('disclaimer');
+                  }
+                }}
+                className="sidebar-mini-link"
+                title="Legal Disclaimer"
+              >
                 <AlertTriangle size={13} />
                 <span>Disclaimer</span>
-              </button>
-              <button onClick={() => handleFooterLinkClick('faq')} className={`sidebar-mini-link ${activePage === 'faq' ? 'active' : ''}`} title="Frequently Asked Questions">
+              </a>
+              <a
+                href="/faq"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('faq');
+                  }
+                }}
+                className={`sidebar-mini-link ${activePage === 'faq' ? 'active' : ''}`}
+                title="Frequently Asked Questions"
+              >
                 <HelpCircle size={13} />
                 <span>FAQ</span>
-              </button>
-              <button onClick={() => handleFooterLinkClick('contact')} className="sidebar-mini-link" title="Contact Us">
+              </a>
+              <a
+                href="/contact"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleFooterLinkClick('contact');
+                  }
+                }}
+                className="sidebar-mini-link"
+                title="Contact Us"
+              >
                 <Mail size={13} />
                 <span>Contact</span>
-              </button>
+              </a>
             </div>
 
             {/* Mini Copyright */}

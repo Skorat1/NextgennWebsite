@@ -145,7 +145,7 @@ export default function ContactPage({ onBackToHome }) {
         <div className="privacy-pill-box">
           <Gamepad2 size={18} className="text-blue" />
           <div>
-            <strong>500+ Games Available</strong>
+            <strong>5000+ Games Available</strong>
             <span>Instant access, no downloads or signups.</span>
           </div>
         </div>

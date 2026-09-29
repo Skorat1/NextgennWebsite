@@ -8,18 +8,39 @@
   <link rel="apple-touch-icon" href="/favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0216" />
+
+  <!-- Primary Meta Tags -->
   <title>NextGenn - Play Free Online Games | Instant Arcade & HTML5 Games</title>
+  <meta name="title" content="NextGenn - Play Free Online Games | Instant Arcade & HTML5 Games" />
   <meta name="description"
-    content="Play 500+ free online games at home or on mobile. Instant loading action, arcade, puzzles, shooting, racing, and 2-player games on NextGenn with no downloads needed." />
+    content="Play 5000+ free online games right in your browser. Instant loading action, arcade, puzzles, shooting, racing, and multiplayer games on NextGenn with no downloads needed." />
   <meta name="keywords"
-    content="NextGenn, nextgenn, next genn games, free online games, play games online, unblocked games, browser games, html5 games, 2 player games, arcade games" />
+    content="NextGenn, nextgenn games, free online games, play games online, browser games, html5 games, unblocked games, 2 player games, arcade games, instant games, mobile games" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="author" content="NextGenn Games" />
+  <link rel="canonical" href="https://nextgenn.com/" />
 
-
-  <meta property="og:title" content="NextGenn - Play Free Online Games" />
-  <meta property="og:description" content="Play 500+ free online games right in your browser. No download required!" />
+  <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nextgenn.com/" />
+  <meta property="og:title" content="NextGenn - Play Free Online Games | Instant Arcade & HTML5 Games" />
+  <meta property="og:description"
+    content="Play 5000+ free online games right in your browser. Instant loading action, arcade, puzzles, and racing games on NextGenn with zero download required!" />
+  <meta property="og:image" content="https://nextgenn.com/nextgenn-full.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="NextGenn Games" />
+  <meta property="og:locale" content="en_US" />
 
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://nextgenn.com/" />
+  <meta name="twitter:title" content="NextGenn - Play Free Online Games" />
+  <meta name="twitter:description"
+    content="Play 5000+ free online games right in your browser. Instant loading with no downloads needed!" />
+  <meta name="twitter:image" content="https://nextgenn.com/nextgenn-full.png" />
 
+  <!-- High-Performance DNS & Resource Preconnects -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://img.gamedistribution.com" crossorigin />
@@ -33,6 +54,7 @@
   <link rel="dns-prefetch" href="https://img.gamemonetize.com" />
   <link rel="dns-prefetch" href="https://images.crazygames.com" />
   <link rel="dns-prefetch" href="https://img.poki.com" />
+
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap"
     rel="stylesheet" />
@@ -41,13 +63,47 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="NextGenn" />
+
+  <!-- Schema.org Structured Data: WebSite & SearchAction -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://nextgenn.com/#website",
+        "url": "https://nextgenn.com/",
+        "name": "NextGenn",
+        "description": "Play 5000+ free online games right in your browser.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://nextgenn.com/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://nextgenn.com/#organization",
+        "name": "NextGenn Games",
+        "url": "https://nextgenn.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://nextgenn.com/nextgenn-icon.png",
+          "width": 512,
+          "height": 512
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
   <script>
-    if ('serviceWorker' in navigator && window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => { });
       });
