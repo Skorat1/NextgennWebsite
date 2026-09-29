@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0216" />
+  <title>NextGenn - Play Free Online Games | Instant Arcade & HTML5 Games</title>
+  <meta name="description"
+    content="Play 500+ free online games at home or on mobile. Instant loading action, arcade, puzzles, shooting, racing, and 2-player games on NextGenn with no downloads needed." />
+  <meta name="keywords"
+    content="NextGenn, nextgenn, next genn games, free online games, play games online, unblocked games, browser games, html5 games, 2 player games, arcade games" />
+
+
+  <meta property="og:title" content="NextGenn - Play Free Online Games" />
+  <meta property="og:description" content="Play 500+ free online games right in your browser. No download required!" />
+  <meta property="og:type" content="website" />
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://img.gamedistribution.com" crossorigin />
+  <link rel="preconnect" href="https://img.gamepix.com" crossorigin />
+  <link rel="preconnect" href="https://img.gamemonetize.com" crossorigin />
+  <link rel="preconnect" href="https://images.crazygames.com" crossorigin />
+  <link rel="preconnect" href="https://img.poki.com" crossorigin />
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+  <link rel="dns-prefetch" href="https://img.gamedistribution.com" />
+  <link rel="dns-prefetch" href="https://img.gamepix.com" />
+  <link rel="dns-prefetch" href="https://img.gamemonetize.com" />
+  <link rel="dns-prefetch" href="https://images.crazygames.com" />
+  <link rel="dns-prefetch" href="https://img.poki.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NextGenn" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => { });
+      });
+    }
+  </script>
+</body>
+
+</html>
