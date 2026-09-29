@@ -34,7 +34,13 @@ import {
   Play,
   ShieldCheck,
   BookOpen,
-  Tag
+  Tag,
+  Calendar,
+  Cpu,
+  Award,
+  MousePointer,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../utils/audio';
@@ -197,13 +203,18 @@ function detectInitialRatio(g) {
 export default function GamePlayerView({
   game,
   onClose,
-  isFavorite,
+  isFavorite: isFavoriteProp,
+  favorites = [],
   onToggleFavorite,
   allGames = [],
   onSelectRelatedGame,
   onSelectCategory,
   user
 }) {
+  const isFavorite = isFavoriteProp !== undefined
+    ? isFavoriteProp
+    : (favorites || []).some(id => String(id) === String(game?.id || game?._id));
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isLightsOff, setIsLightsOff] = useState(false);
@@ -239,6 +250,7 @@ export default function GamePlayerView({
   const [gameMuted, setGameMuted] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState([]);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -1134,7 +1146,7 @@ export default function GamePlayerView({
                 key={`rel-${relGame.id || relGame._id}`}
                 game={relGame}
                 onPlay={onSelectRelatedGame}
-                isFavorite={isFavorite}
+                isFavorite={(favorites || []).some(id => String(id) === String(relGame.id || relGame._id))}
                 onToggleFavorite={onToggleFavorite}
                 forceSquare={true}
                 sizeVariant="1x1"
@@ -1144,28 +1156,41 @@ export default function GamePlayerView({
         </div>
       )}
 
-      {/* 5. Game Description & About Details (Upgraded Portal Layout) */}
+      {/* 5. Game Description & About Details (Modern Gaming Portal Layout) */}
       <div className="crazy-game-description-section">
         <div className="game-desc-card">
 
           {/* Header Row: Game Avatar, Title, Developer, Category, Tags & Rating */}
           <div className="game-desc-header">
             <div className="game-desc-header-main">
-              <img
-                src={game.thumbnail || game.thumbnailUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100&q=80'}
-                alt={game.title}
-                className="game-desc-avatar"
-              />
+              <div className="game-desc-avatar-wrapper">
+                <img
+                  src={game.thumbnail || game.thumbnailUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100&q=80'}
+                  alt={game.title}
+                  className="game-desc-avatar"
+                />
+                <span className="avatar-verified-badge" title="Official Verified Game">
+                  <ShieldCheck size={12} strokeWidth={2.5} />
+                </span>
+              </div>
               <div className="game-desc-title-group">
-                <h2 className="game-desc-title">About {game.title}</h2>
+                <div className="game-desc-title-row">
+                  <h2 className="game-desc-title">About {game.title}</h2>
+                  <span className="desc-free-badge">100% Free</span>
+                </div>
                 <div className="game-desc-meta-sub">
-                  <span>By <strong>{game.developer || game.author || (game.category ? game.category.toUpperCase() : 'NextGenn')}</strong></span>
+                  <span className="meta-author">
+                    By <strong>{game.developer || game.author || (game.category ? `${game.category} Studios` : 'NextGenn')}</strong>
+                  </span>
                   <span className="meta-bullet">•</span>
-                  <span>Playable in Browser</span>
+                  <span className="meta-platform">
+                    <Monitor size={13} /> Browser & Mobile
+                  </span>
                   <span className="meta-bullet">•</span>
                   <span className="desc-rating-stars">
                     <Star size={14} fill="#f59e0b" color="#f59e0b" />
                     <strong>{game.rating || '4.8'}</strong> / 5
+                    <span className="rating-count">({(likes || 120) + (dislikes || 5)} votes)</span>
                   </span>
                 </div>
               </div>
@@ -1173,8 +1198,41 @@ export default function GamePlayerView({
 
             <div className="game-desc-header-side">
               <div className="instant-play-chip">
-                <Zap size={15} color="#0284c7" />
+                <Zap size={14} />
                 <span>Instant Play Free</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Highlight Strip */}
+          <div className="desc-features-strip">
+            <div className="desc-feature-item">
+              <div className="feature-item-icon zap">
+                <Zap size={16} />
+              </div>
+              <div className="feature-item-text">
+                <span className="feature-item-title">Zero Installation</span>
+                <span className="feature-item-desc">Instant play in browser</span>
+              </div>
+            </div>
+
+            <div className="desc-feature-item">
+              <div className="feature-item-icon check">
+                <Check size={16} />
+              </div>
+              <div className="feature-item-text">
+                <span className="feature-item-title">100% Free to Play</span>
+                <span className="feature-item-desc">No paywalls or hidden fees</span>
+              </div>
+            </div>
+
+            <div className="desc-feature-item">
+              <div className="feature-item-icon shield">
+                <ShieldCheck size={16} />
+              </div>
+              <div className="feature-item-text">
+                <span className="feature-item-title">Safe & Verified</span>
+                <span className="feature-item-desc">Tested & virus-free</span>
               </div>
             </div>
           </div>
@@ -1185,61 +1243,98 @@ export default function GamePlayerView({
             {/* Left Column: Description, Tags, Controls & Instructions */}
             <div className="game-desc-left-col">
 
-              {/* 1. Overview Section */}
-              <div className="desc-section-block">
-                <div className="desc-section-title">
-                  <BookOpen size={18} color="#0284c7" />
-                  <h3>Game Overview</h3>
+              {/* 1. Overview Section Card */}
+              <div className="desc-content-card">
+                <div className="desc-card-header">
+                  <div className="desc-section-title">
+                    <div className="desc-title-icon book">
+                      <BookOpen size={16} />
+                    </div>
+                    <h3>Game Overview</h3>
+                  </div>
                 </div>
-                <div className="game-desc-content">
-                  {game.description ? (
-                    <p>{game.description}</p>
-                  ) : (
-                    <p>
-                      Experience {game.title} online for free on NextGenn! Dive into smooth, engaging gameplay directly in your web browser with zero downloads required. Challenge your puzzle-solving skills, beat new levels, and explore exciting challenges anywhere, anytime.
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              {/* 2. Tags & Categories (Placed between Game Overview and Controls) */}
-              <div className="desc-section-block desc-tags-block">
-                <div className="desc-section-title">
-                  <Tag size={17} color="#0284c7" />
-                  <h3>Tags & Categories</h3>
+                <div className="game-desc-content">
+                  {(() => {
+                    const rawDesc = game.description ? game.description.trim() : '';
+                    let cleanDesc = rawDesc;
+                    if (cleanDesc) {
+                      if (/free\s+o$/i.test(cleanDesc)) {
+                        cleanDesc = cleanDesc.replace(/free\s+o$/i, 'free to play online anytime.');
+                      } else if (!/[.!?]$/.test(cleanDesc)) {
+                        cleanDesc = cleanDesc.replace(/\s+\w+$/, '.');
+                      }
+                    } else {
+                      cleanDesc = `Experience ${game.title} online for free on NextGenn! Dive into smooth, engaging gameplay directly in your web browser with zero downloads required. Challenge your skills, beat new high scores, and explore exciting gameplay anywhere, anytime on desktop and mobile.`;
+                    }
+
+                    const isLong = cleanDesc.length > 280;
+                    const displayText = (!isDescExpanded && isLong) ? cleanDesc.slice(0, 260) + '...' : cleanDesc;
+
+                    return (
+                      <>
+                        <p>{displayText}</p>
+                        {isLong && (
+                          <button
+                            type="button"
+                            className="desc-read-more-btn"
+                            onClick={() => {
+                              sounds.playClick();
+                              setIsDescExpanded(!isDescExpanded);
+                            }}
+                          >
+                            <span>{isDescExpanded ? 'Show Less' : 'Read Full Overview'}</span>
+                            {isDescExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
-                <div className="desc-tags-pills-row">
-                  <span
-                    className="min-cat-badge"
-                    onClick={() => {
-                      sounds.playClick();
-                      if (onSelectCategory) onSelectCategory((game.category || '').toLowerCase());
-                    }}
-                    title={`Browse all ${game.category || 'Arcade'} games`}
-                  >
-                    {(game.category || 'Arcade').toUpperCase()}
+
+                {/* Tags & Categories seamlessly embedded in Overview */}
+                <div className="desc-tags-embedded">
+                  <span className="desc-tags-label">
+                    <Tag size={13} />
+                    <span>Tags:</span>
                   </span>
-                  {game.tags && game.tags.slice(0, 10).map((tag, idx) => (
+                  <div className="desc-tags-pills-row">
                     <span
-                      key={idx}
-                      className="min-tag-pill"
+                      className="min-cat-badge"
                       onClick={() => {
                         sounds.playClick();
-                        if (onSelectCategory) onSelectCategory(tag.toLowerCase());
+                        if (onSelectCategory) onSelectCategory((game.category || '').toLowerCase());
                       }}
-                      title={`Browse #${tag} games`}
+                      title={`Browse all ${game.category || 'Arcade'} games`}
                     >
-                      #{tag}
+                      {(game.category || 'Arcade').toUpperCase()}
                     </span>
-                  ))}
+                    {game.tags && game.tags.slice(0, 8).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="min-tag-pill"
+                        onClick={() => {
+                          sounds.playClick();
+                          if (onSelectCategory) onSelectCategory(tag.toLowerCase());
+                        }}
+                        title={`Browse #${tag} games`}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* 3. Controls & Gameplay Guide */}
-              <div className="desc-section-block">
-                <div className="desc-section-title">
-                  <Gamepad2 size={18} color="#0284c7" />
-                  <h3>Controls & How to Play</h3>
+              {/* 2. Controls & Gameplay Guide Card */}
+              <div className="desc-content-card">
+                <div className="desc-card-header">
+                  <div className="desc-section-title">
+                    <div className="desc-title-icon gamepad">
+                      <Gamepad2 size={16} />
+                    </div>
+                    <h3>Controls & How to Play</h3>
+                  </div>
                 </div>
 
                 {/* Visual Keycaps Controls Bar */}
@@ -1264,7 +1359,10 @@ export default function GamePlayerView({
                     <div className="ctrl-keycaps-row">
                       <kbd className="game-kbd wide">Space</kbd>
                       <span className="ctrl-or-text">or</span>
-                      <kbd className="game-kbd wide">Left Click</kbd>
+                      <kbd className="game-kbd wide mouse-kbd">
+                        <MousePointer size={12} />
+                        <span>Left Click</span>
+                      </kbd>
                     </div>
                   </div>
                 </div>
@@ -1273,28 +1371,12 @@ export default function GamePlayerView({
                 {game.instructions && (
                   <div className="game-instructions-box">
                     <div className="instruction-box-header">
-                      <Sparkles size={16} color="#0284c7" />
-                      <h4>Objective & Instructions:</h4>
+                      <Sparkles size={15} />
+                      <h4>Objective & Instructions</h4>
                     </div>
                     <p className="game-instructions-text">{game.instructions}</p>
                   </div>
                 )}
-              </div>
-
-              {/* Highlights Feature Pills */}
-              <div className="desc-highlights-row">
-                <div className="desc-highlight-item">
-                  <Check size={16} color="#059669" />
-                  <span>No Download or Installation</span>
-                </div>
-                <div className="desc-highlight-item">
-                  <Check size={16} color="#059669" />
-                  <span>100% Free to Play</span>
-                </div>
-                <div className="desc-highlight-item">
-                  <Check size={16} color="#059669" />
-                  <span>Cloud Progress Tracking</span>
-                </div>
               </div>
 
             </div>
@@ -1304,41 +1386,70 @@ export default function GamePlayerView({
 
               <div className="game-specs-card">
                 <div className="specs-card-header">
-                  <Info size={17} color="#0284c7" />
+                  <div className="desc-title-icon info">
+                    <Info size={16} />
+                  </div>
                   <h4>Game Specifications</h4>
                 </div>
 
                 <div className="specs-card-list">
                   <div className="specs-card-row">
-                    <span className="spec-label">Rating</span>
+                    <span className="spec-label">
+                      <Star size={13} className="spec-icon" />
+                      <span>Rating</span>
+                    </span>
                     <span className="spec-value highlight">
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      {game.rating || '4.8'} / 5 ({(likes || 120) + (dislikes || 5)} votes)
+                      <Star size={13} fill="#f59e0b" color="#f59e0b" />
+                      {game.rating || '4.8'} / 5
+                      <span className="spec-votes-sub">({(likes || 120) + (dislikes || 5)})</span>
                     </span>
                   </div>
 
                   <div className="specs-card-row">
-                    <span className="spec-label">Category</span>
-                    <span className="spec-value cat-tag">{game.category || 'Arcade'}</span>
+                    <span className="spec-label">
+                      <Tag size={13} className="spec-icon" />
+                      <span>Category</span>
+                    </span>
+                    <span
+                      className="spec-value cat-tag"
+                      onClick={() => {
+                        sounds.playClick();
+                        if (onSelectCategory) onSelectCategory((game.category || '').toLowerCase());
+                      }}
+                    >
+                      {game.category || 'Arcade'}
+                    </span>
                   </div>
 
                   <div className="specs-card-row">
-                    <span className="spec-label">Developer</span>
-                    <span className="spec-value">{game.developer || game.author || 'NextGenn'}</span>
+                    <span className="spec-label">
+                      <Users size={13} className="spec-icon" />
+                      <span>Developer</span>
+                    </span>
+                    <span className="spec-value">{game.developer || game.author || 'NextGenn Studios'}</span>
                   </div>
 
                   <div className="specs-card-row">
-                    <span className="spec-label">Platform</span>
+                    <span className="spec-label">
+                      <Monitor size={13} className="spec-icon" />
+                      <span>Platform</span>
+                    </span>
                     <span className="spec-value">Web (Desktop, Mobile)</span>
                   </div>
 
                   <div className="specs-card-row">
-                    <span className="spec-label">Technology</span>
-                    <span className="spec-value">HTML5 / WebGL</span>
+                    <span className="spec-label">
+                      <Cpu size={13} className="spec-icon" />
+                      <span>Technology</span>
+                    </span>
+                    <span className="spec-value tech-badge">HTML5 / WebGL</span>
                   </div>
 
                   <div className="specs-card-row">
-                    <span className="spec-label">Edition</span>
+                    <span className="spec-label">
+                      <Calendar size={13} className="spec-icon" />
+                      <span>Edition</span>
+                    </span>
                     <span className="spec-value">2026 Release</span>
                   </div>
                 </div>
@@ -1347,11 +1458,11 @@ export default function GamePlayerView({
               {/* Safe & Verified Guarantee Box */}
               <div className="game-trust-card">
                 <div className="trust-card-icon">
-                  <ShieldCheck size={20} color="#059669" />
+                  <ShieldCheck size={22} />
                 </div>
                 <div className="trust-card-text">
                   <h5>Verified & Virus-Free</h5>
-                  <p>Tested and secured by NextGenn for seamless, safe browser gaming.</p>
+                  <p>Tested, secured, and optimized by NextGenn for seamless, safe browser gaming.</p>
                 </div>
               </div>
 

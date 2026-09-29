@@ -1,17 +1,11 @@
 import React, { useState, useMemo, memo, useEffect, useRef, useCallback } from 'react';
-import { Gamepad2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Gamepad2, Loader2, ChevronLeft, ChevronRight, RotateCw, Search } from 'lucide-react';
 import GameCard from './GameCard';
 import { sounds } from '../utils/audio';
 import { renderCategorySvgIcon, getDimmedCategoryColor } from '../utils/categoryIcons';
 
 const DEFAULT_QUICK_CATEGORIES = [
-  { id: 'all', name: 'All Games', icon: 'gamepad' },
-  { id: 'arcade', name: 'Arcade', icon: 'arcade' },
-  { id: 'action', name: 'Action', icon: 'action' },
-  { id: 'puzzle', name: 'Puzzle', icon: 'puzzle' },
-  { id: 'classic', name: 'Classic', icon: 'classic' },
-  { id: 'sports', name: 'Sports', icon: 'sports' },
-  { id: 'cyber', name: 'Cyberpunk', icon: 'cyber' }
+
 ];
 
 const BATCH_SIZE = 28;
@@ -183,115 +177,119 @@ const GameGrid = memo(function GameGrid({
   return (
     <section className="gamepix-category-grid-section">
       {/* Quick Category Chips Bar with Smooth Scrolling & Left/Right Arrows */}
-      <div className={`quick-cat-scroll-wrapper ${canScrollLeft ? 'has-left-overflow' : ''} ${canScrollRight ? 'has-right-overflow' : ''}`}>
-        {canScrollLeft && (
-          <button
-            type="button"
-            className="quick-cat-arrow-btn left"
-            onClick={() => handleScrollStep('left')}
-            aria-label="Scroll categories left"
+      {quickCatList.length > 1 && (
+        <div className={`quick-cat-scroll-wrapper ${canScrollLeft ? 'has-left-overflow' : ''} ${canScrollRight ? 'has-right-overflow' : ''}`}>
+          {canScrollLeft && (
+            <button
+              type="button"
+              className="quick-cat-arrow-btn left"
+              onClick={() => handleScrollStep('left')}
+              aria-label="Scroll categories left"
+            >
+              <ChevronLeft size={20} strokeWidth={2.4} />
+            </button>
+          )}
+
+          <div
+            ref={scrollContainerRef}
+            className={`quick-cat-scroll-bar ${isDragging ? 'is-dragging' : ''}`}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
           >
-            <ChevronLeft size={20} strokeWidth={2.4} />
-          </button>
-        )}
+            {quickCatList.map(cat => {
+              const catIdNorm = (cat.id || cat._id || '').toLowerCase().trim();
+              const activeCatNorm = (activeCategory || '').toLowerCase().trim();
+              const isAllCat = catIdNorm === 'all' || catIdNorm === '';
+              const isActive = isAllCat
+                ? (!activeCatNorm || activeCatNorm === 'all')
+                : (activeCatNorm === catIdNorm || (cat.name && activeCatNorm === cat.name.toLowerCase().trim()));
 
-        <div
-          ref={scrollContainerRef}
-          className={`quick-cat-scroll-bar ${isDragging ? 'is-dragging' : ''}`}
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUpOrLeave}
-          onMouseLeave={handleMouseUpOrLeave}
-        >
-          {quickCatList.map(cat => {
-            const catIdNorm = (cat.id || cat._id || '').toLowerCase().trim();
-            const activeCatNorm = (activeCategory || '').toLowerCase().trim();
-            const isAllCat = catIdNorm === 'all' || catIdNorm === '';
-            const isActive = isAllCat
-              ? (!activeCatNorm || activeCatNorm === 'all')
-              : (activeCatNorm === catIdNorm || (cat.name && activeCatNorm === cat.name.toLowerCase().trim()));
+              const rawColor = cat.color || (isAllCat ? '#10b981' : '#3b82f6');
+              const catColor = getDimmedCategoryColor(rawColor);
+              const rawName = cat.name || 'Category';
+              const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
-            const rawColor = cat.color || (isAllCat ? '#10b981' : '#3b82f6');
-            const catColor = getDimmedCategoryColor(rawColor);
-            const rawName = cat.name || 'Category';
-            const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-
-            return (
-              <button
-                key={cat.id || cat._id || 'all'}
-                className={`category-quick-pill ${isActive ? 'active' : ''}`}
-                style={{
-                  '--cat-color': catColor,
-                  ...(isActive ? {
-                    background: `linear-gradient(135deg, ${catColor}, ${catColor}e6)`,
-                    borderColor: catColor,
-                    boxShadow: `0 4px 14px -1px ${catColor}55`,
-                    color: '#ffffff'
-                  } : {
-                    borderColor: `${catColor}38`,
-                    background: '#ffffff'
-                  })
-                }}
-                onClick={(e) => {
-                  if (hasDragged.current) {
-                    e.preventDefault();
-                    return;
-                  }
-                  sounds.playClick();
-                  if (onSelectCategory) onSelectCategory(isAllCat ? '' : (cat.id || cat._id));
-                }}
-              >
-                <span
-                  className="pill-icon-container"
+              return (
+                <button
+                  key={cat.id || cat._id || 'all'}
+                  className={`category-quick-pill ${isActive ? 'active' : ''}`}
                   style={{
-                    background: isActive ? 'rgba(255, 255, 255, 0.24)' : `${catColor}14`,
-                    color: isActive ? '#ffffff' : catColor
+                    '--cat-color': catColor,
+                    ...(isActive ? {
+                      background: `linear-gradient(135deg, ${catColor}, ${catColor}e6)`,
+                      borderColor: catColor,
+                      boxShadow: `0 4px 14px -1px ${catColor}55`,
+                      color: '#ffffff'
+                    } : {
+                      borderColor: `${catColor}38`,
+                      background: '#ffffff'
+                    })
+                  }}
+                  onClick={(e) => {
+                    if (hasDragged.current) {
+                      e.preventDefault();
+                      return;
+                    }
+                    sounds.playClick();
+                    if (onSelectCategory) onSelectCategory(isAllCat ? '' : (cat.id || cat._id));
                   }}
                 >
-                  {renderCategorySvgIcon(cat, 18)}
-                </span>
-                <span className="pill-name-text">
-                  {displayName}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <span
+                    className="pill-icon-container"
+                    style={{
+                      background: isActive ? 'rgba(255, 255, 255, 0.24)' : `${catColor}14`,
+                      color: isActive ? '#ffffff' : catColor
+                    }}
+                  >
+                    {renderCategorySvgIcon(cat, 18)}
+                  </span>
+                  <span className="pill-name-text">
+                    {displayName}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-        {canScrollRight && (
-          <button
-            type="button"
-            className="quick-cat-arrow-btn right"
-            onClick={() => handleScrollStep('right')}
-            aria-label="Scroll categories right"
-          >
-            <ChevronRight size={20} strokeWidth={2.4} />
-          </button>
-        )}
-      </div>
-
-      {/* Grid Header */}
-      <div className={`grid-header-row ${searchQuery ? 'is-search-result' : ''}`}>
-        <div className="grid-title-group">
-          <h2 className="grid-main-title sky-brand-heading">
-            {searchQuery ? (
-              <>Search Results for: <span className="highlight-text">"{searchQuery}"</span></>
-            ) : (
-              title || (activeCategory ? `${activeCategory.toUpperCase()} GAMES` : 'All Games')
-            )}
-          </h2>
-          {games.length > 0 && (
-            <span style={{
-              fontSize: '0.78rem', color: '#64748b', fontWeight: '600',
-              marginLeft: '10px', background: '#f1f5f9',
-              padding: '2px 10px', borderRadius: '20px', letterSpacing: '0.02em'
-            }}>
-              {displayedGames.length} / {games.length}
-            </span>
+          {canScrollRight && (
+            <button
+              type="button"
+              className="quick-cat-arrow-btn right"
+              onClick={() => handleScrollStep('right')}
+              aria-label="Scroll categories right"
+            >
+              <ChevronRight size={20} strokeWidth={2.4} />
+            </button>
           )}
         </div>
-      </div>
+      )}
+
+      {/* Grid Header (only show when there are games or active filter) */}
+      {(games.length > 0 || searchQuery || (activeCategory && activeCategory !== 'all')) && (
+        <div className={`grid-header-row ${searchQuery ? 'is-search-result' : ''}`}>
+          <div className="grid-title-group">
+            <h2 className="grid-main-title sky-brand-heading">
+              {searchQuery ? (
+                <>Search Results for: <span className="highlight-text">"{searchQuery}"</span></>
+              ) : (
+                title || (activeCategory ? `${activeCategory.toUpperCase()} GAMES` : 'All Games')
+              )}
+            </h2>
+            {games.length > 0 && (
+              <span style={{
+                fontSize: '0.78rem', color: '#64748b', fontWeight: '600',
+                marginLeft: '10px', background: '#f1f5f9',
+                padding: '2px 10px', borderRadius: '20px', letterSpacing: '0.02em'
+              }}>
+                {displayedGames.length} / {games.length}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Game Cards Grid */}
       <div className="game-cards-masonry-grid poki-masonry-grid">
@@ -323,7 +321,7 @@ const GameGrid = memo(function GameGrid({
               key={game.id || game._id || index}
               game={game}
               onPlay={onPlayGame}
-              isFavorite={(favorites || []).includes(game.id || game._id)}
+              isFavorite={(favorites || []).some(favId => String(favId) === String(game.id || game._id))}
               onToggleFavorite={onToggleFavorite}
               sizeVariant={sizeVariant}
               priority={index < 12}
@@ -361,46 +359,88 @@ const GameGrid = memo(function GameGrid({
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Modern Sleek Empty State */}
       {games.length === 0 && (
-        <div className="empty-grid-state" style={{
-          padding: '50px 24px', textAlign: 'center', background: '#ffffff',
-          borderRadius: '24px', border: '1.5px dashed #cbd5e1',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.03)', margin: '10px 0 30px'
-        }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '50%',
-            background: 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(37,99,235,0.2)'
-          }}>
-            <Gamepad2 size={38} color="#2563eb" />
+        <div className="empty-grid-showcase">
+          <div className="empty-state-badge">
+            <span className="empty-state-pulse-dot" />
+            <span>Gaming Portal</span>
           </div>
-          <h3 style={{ fontSize: '1.35rem', color: '#0f172a', marginBottom: '8px', fontWeight: '800' }}>
+
+          <div className="empty-state-visual">
+            <div className="empty-state-glow-ring" />
+            <div className="empty-state-icon-box">
+              <Gamepad2 size={40} strokeWidth={2.2} />
+            </div>
+          </div>
+
+          <h3 className="empty-state-title">
             {searchQuery
               ? `No games found for "${searchQuery}"`
-              : activeCategory
-              ? `No games in "${activeCategory.toUpperCase()}" yet`
-              : 'No games available'}
+              : activeCategory && activeCategory !== 'all'
+                ? `No games in "${activeCategory.toUpperCase()}" yet`
+                : 'Game Library is Ready'}
           </h3>
-          <p style={{ color: '#64748b', fontSize: '0.92rem', maxWidth: '420px', margin: '0 auto 20px', lineHeight: '1.5' }}>
+
+          <p className="empty-state-description">
             {searchQuery
-              ? 'Try searching with another keyword or click any category pill above to explore more games.'
-              : 'Games under this category will be available soon. Select another category above or view all games.'}
+              ? 'Try searching with another keyword or explore all games.'
+              : activeCategory && activeCategory !== 'all'
+                ? 'There are no active games under this category right now. Browse other categories or view all games.'
+                : 'No games are available right now. Please check back soon or click below to refresh the library.'}
           </p>
-          <button
-            onClick={() => { sounds.playClick(); if (onSelectCategory) onSelectCategory(''); }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '10px 24px',
-              background: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)',
-              border: 'none', borderRadius: '50px', color: '#0a1024',
-              fontSize: '0.88rem', fontWeight: '800', cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,242,254,0.3)', transition: 'all 0.2s ease'
-            }}
-          >
-            <Gamepad2 size={16} />
-            <span>View All Games</span>
-          </button>
+
+          <div className="empty-state-actions">
+            {searchQuery ? (
+              <>
+                <button
+                  type="button"
+                  className="empty-btn-primary"
+                  onClick={() => {
+                    sounds.playClick();
+                    if (onFocusSearch) onFocusSearch();
+                  }}
+                >
+                  <Search size={16} />
+                  <span>Search Again</span>
+                </button>
+                <button
+                  type="button"
+                  className="empty-btn-secondary"
+                  onClick={() => {
+                    sounds.playClick();
+                    if (onSelectCategory) onSelectCategory('');
+                  }}
+                >
+                  <span>View All Games</span>
+                </button>
+              </>
+            ) : activeCategory && activeCategory !== 'all' ? (
+              <button
+                type="button"
+                className="empty-btn-primary"
+                onClick={() => {
+                  sounds.playClick();
+                  if (onSelectCategory) onSelectCategory('');
+                }}
+              >
+                <Gamepad2 size={16} />
+                <span>View All Games</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="empty-btn-primary"
+                onClick={() => {
+                  sounds.playClick();
+                  window.location.reload();
+                }}
+              >
+                <RotateCw size={16} />
+                <span>Refresh Games</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </section>

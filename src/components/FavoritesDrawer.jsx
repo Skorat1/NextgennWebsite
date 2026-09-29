@@ -13,7 +13,7 @@ export default function FavoritesDrawer({
 }) {
   if (!isOpen) return null;
 
-  const favoriteGames = (games || []).filter(g => g && (favorites || []).includes(g.id || g._id));
+  const favoriteGames = (games || []).filter(g => g && (favorites || []).some(favId => String(favId) === String(g.id || g._id)));
 
   return (
     <>

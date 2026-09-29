@@ -202,10 +202,10 @@ function parseUrlNavState() {
 function App() {
   const initialNav = useMemo(() => parseUrlNavState(), []);
 
-  // Instant 0ms cached games initialization
+  // Real-time games state with seamless static fallback for offline / fresh browsers
   const [games, setGames] = useState(() => {
     try {
-      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_GAMES) || localStorage.getItem('sky_cached_games');
+      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_GAMES);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -214,10 +214,10 @@ function App() {
     return DEFAULT_STATIC_GAMES;
   });
 
-  // Dynamic live categories from backend/admin
+  // Dynamic live categories from backend/admin with static fallback
   const [categories, setCategories] = useState(() => {
     try {
-      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_CATEGORIES) || localStorage.getItem('sky_cached_categories');
+      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_CATEGORIES);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -225,6 +225,8 @@ function App() {
     } catch { }
     return DEFAULT_STATIC_CATEGORIES;
   });
+
+  const [isLoadingGames, setIsLoadingGames] = useState(false);
 
   // Available active games for website players (Draft and Maintenance games are strictly hidden from website)
   const activeGames = useMemo(() => {
@@ -388,43 +390,75 @@ function App() {
         categoriesApi.getLiveCategories().catch(() => null)
       ]);
 
-      if (Array.isArray(liveGames)) {
+      if (Array.isArray(liveGames) && liveGames.length > 0) {
         setGames(liveGames);
         try {
           localStorage.setItem(STORAGE_KEYS.CACHED_GAMES, JSON.stringify(liveGames));
         } catch { }
       }
 
-      if (Array.isArray(liveCats)) {
+      if (Array.isArray(liveCats) && liveCats.length > 0) {
         setCategories(liveCats);
         try {
           localStorage.setItem(STORAGE_KEYS.CACHED_CATEGORIES, JSON.stringify(liveCats));
         } catch { }
       }
     } catch (err) {
-      // Offline fallback already loaded via cache
+      // Silently keep default or cached games without disrupting UI
+    } finally {
+      setIsLoadingGames(false);
     }
   }, []);
 
   useEffect(() => {
     fetchLivePlatformData();
+
+    // Auto-sync in background if backend server is available
+    const interval = setInterval(() => {
+      gamesApi.getLiveGames()
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setGames(data);
+            try {
+              localStorage.setItem(STORAGE_KEYS.CACHED_GAMES, JSON.stringify(data));
+            } catch { }
+          }
+        })
+        .catch(() => { });
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, [fetchLivePlatformData]);
 
   useEffect(() => {
-    if (pendingGameId && activeGames.length > 0) {
+    let isCancelled = false;
+    if (pendingGameId) {
+      const pIdStr = String(pendingGameId).toLowerCase();
       const found = activeGames.find(g =>
-        (g.id && g.id === pendingGameId) ||
-        (g._id && g._id.toString() === pendingGameId) ||
-        (g.title && g.title.toLowerCase() === pendingGameId.toLowerCase())
+        (g.id && String(g.id).toLowerCase() === pIdStr) ||
+        (g._id && String(g._id).toLowerCase() === pIdStr) ||
+        (g.title && g.title.toLowerCase() === pIdStr)
       );
       if (found) {
         setSelectedGame(found);
-      } else {
-        setSelectedGame(null);
+      } else if (activeGames.length > 0) {
+        // Fallback: Fetch directly from API in case of single game direct link or unlisted active game
+        gamesApi.getById(pendingGameId)
+          .then(data => {
+            if (!isCancelled && data && (data.game || data.id)) {
+              setSelectedGame(data.game || data);
+            } else if (!isCancelled) {
+              setSelectedGame(null);
+            }
+          })
+          .catch(() => {
+            if (!isCancelled) setSelectedGame(null);
+          });
       }
-    } else if (!pendingGameId) {
+    } else {
       setSelectedGame(null);
     }
+    return () => { isCancelled = true; };
   }, [pendingGameId, activeGames]);
 
   useEffect(() => {
@@ -457,13 +491,10 @@ function App() {
   useEffect(() => {
     if (activeGames.length > 0) {
       setRecentlyPlayed(prev => {
-        const filtered = prev.filter(r => activeGames.some(g => g.id === r.id));
+        const filtered = prev.filter(r => activeGames.some(g => String(g.id || g._id) === String(r.id || r._id)));
         localStorage.setItem(STORAGE_KEYS.RECENT, JSON.stringify(filtered));
         return filtered;
       });
-    } else {
-      setRecentlyPlayed([]);
-      localStorage.removeItem(STORAGE_KEYS.RECENT);
     }
   }, [activeGames]);
 
@@ -498,14 +529,15 @@ function App() {
 
   const handleToggleFavorite = useCallback((gameId) => {
     setFavorites(prev => {
-      if (prev.includes(gameId)) {
-        return prev.filter(id => id !== gameId);
+      const exists = prev.some(id => String(id) === String(gameId));
+      if (exists) {
+        return prev.filter(id => String(id) !== String(gameId));
       } else {
         return [...prev, gameId];
       }
     });
   }, []);
-  
+
   const handlePlayGame = useCallback((game) => {
     const gKey = game.id || game._id || game.title;
     setSelectedGame(game);
@@ -515,7 +547,7 @@ function App() {
     window.history.pushState({ gameId: gKey, category: activeCategory, page: activePage }, '', targetUrl);
 
     setRecentlyPlayed(prev => {
-      const filtered = prev.filter(g => g.id !== game.id);
+      const filtered = prev.filter(g => String(g.id || g._id) !== String(game.id || game._id));
       return [game, ...filtered].slice(0, 10);
     });
 
@@ -707,17 +739,16 @@ function App() {
         )}
 
         {/* Right Main Content Area */}
-        <div className={`gamepix-main-wrapper ${
-          ['about', 'privacy', 'terms', 'contact', 'disclaimer', 'developers', 'blog', 'faq'].includes(activePage)
+        <div className={`gamepix-main-wrapper ${['about', 'privacy', 'terms', 'contact', 'disclaimer', 'developers', 'blog', 'faq'].includes(activePage)
             ? 'sidebar-hidden'
             : isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'
-        }`}>
+          }`}>
           <main className="gamepix-main-content">
             {selectedGame ? (
               <GamePlayerView
                 game={selectedGame}
                 onClose={handleCloseGame}
-                isFavorite={favorites.includes(selectedGame.id)}
+                favorites={favorites}
                 onToggleFavorite={handleToggleFavorite}
                 allGames={activeGames}
                 onSelectRelatedGame={handlePlayGame}
@@ -780,6 +811,11 @@ function App() {
                   onNavigate={handleNavigation}
                 />
               </Suspense>
+            ) : isLoadingGames && activeGames.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '100px 20px', color: '#64748b' }}>
+                <div className="loading-spinner" style={{ margin: '0 auto 16px', width: 36, height: 36 }} />
+                <p style={{ fontWeight: 600 }}>Loading Games...</p>
+              </div>
             ) : (
               <GameGrid
                 title={
