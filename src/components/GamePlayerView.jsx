@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { gamesApi } from '../services/api';
+import { gamesApi, leaderboardApi, cloudSyncApi } from '../services/api';
 import {
   Maximize2,
   Minimize2,
@@ -45,6 +45,7 @@ import {
 import confetti from 'canvas-confetti';
 import { sounds } from '../utils/audio';
 import { getGamePreviewVideo, parseVideoSource } from '../utils/videoHelper';
+import { toGameSlug } from '../utils/seo';
 import GameCard from './GameCard';
 
 function SidebarGameTile({ game, onPlay, isFirst }) {
@@ -86,8 +87,7 @@ function SidebarGameTile({ game, onPlay, isFirst }) {
     }
   };
 
-  const gameId = game?.id || game?._id;
-  const gameHref = `/game/${encodeURIComponent(gameId)}`;
+  const gameHref = `/game/${toGameSlug(game)}`;
 
   return (
     <a
@@ -231,13 +231,7 @@ export default function GamePlayerView({
   const [dislikes, setDislikes] = useState(() => {
     return typeof game?.dislikes === 'number' ? game.dislikes : 0;
   });
-  const [userVote, setUserVote] = useState(() => {
-    try {
-      return localStorage.getItem(`nextgenn_vote_${game?.id}`) || localStorage.getItem(`sky_vote_${game?.id}`) || null;
-    } catch {
-      return null;
-    }
-  });
+  const [userVote, setUserVote] = useState(null);
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -245,13 +239,7 @@ export default function GamePlayerView({
   const [aspectRatio, setAspectRatio] = useState(() => detectInitialRatio(game));
   const [iframeKey, setIframeKey] = useState(0);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(() => {
-    try {
-      return parseInt(localStorage.getItem(`nextgenn_hs_${game?.id}`) || localStorage.getItem(`sky_hs_${game?.id}`) || '0', 10);
-    } catch {
-      return 0;
-    }
-  });
+  const [highScore, setHighScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameMuted, setGameMuted] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState([]);
@@ -296,15 +284,36 @@ export default function GamePlayerView({
     }, 2200);
   };
 
-  // Reset & sync states on game change
+  // Reset & sync states on game change from MySQL
   useEffect(() => {
     if (game) {
       if (typeof game.likes === 'number') setLikes(game.likes);
       if (typeof game.dislikes === 'number') setDislikes(game.dislikes);
-      try {
-        setUserVote(localStorage.getItem(`nextgenn_vote_${gameId}`) || localStorage.getItem(`sky_vote_${gameId}`) || null);
-      } catch {
-        setUserVote(null);
+      setUserVote(null);
+
+      // Hydrate vote and high score directly from MySQL
+      if (gameId) {
+        leaderboardApi.getLeaderboard(gameId).then(scores => {
+          if (Array.isArray(scores) && scores.length > 0) {
+            const userScore = scores.find(s => (user?.id && s.userId === user.id) || (user?.username && s.username === user.username));
+            if (userScore) {
+              setHighScore(userScore.score);
+            } else if (scores[0]?.score) {
+              setHighScore(scores[0].score);
+            }
+          }
+        }).catch(() => {});
+
+        if (user?.id) {
+          cloudSyncApi.getProgress(user.id).then(res => {
+            if (res?.cloudSave?.votes?.[gameId]) {
+              setUserVote(res.cloudSave.votes[gameId]);
+            }
+            if (res?.cloudSave?.highScores?.[gameId]) {
+              setHighScore(prev => Math.max(prev, res.cloudSave.highScores[gameId]));
+            }
+          }).catch(() => {});
+        }
       }
     }
     setUserRating(0);
@@ -317,7 +326,7 @@ export default function GamePlayerView({
     const hasUrl = Boolean(game?.gameUrl && game.gameUrl.trim().length > 5);
     setUseBuiltInEngine(!hasUrl);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [gameId, game?.gameUrl]);
+  }, [gameId, game?.gameUrl, user]);
 
   const toggleSizeMode = () => {
     sounds.playClick();
@@ -655,15 +664,25 @@ export default function GamePlayerView({
     };
   }, [useBuiltInEngine, initArcadeEngine]);
 
+  // Persist score & high score directly to MySQL database
   useEffect(() => {
-    if (score > highScore) {
+    if (score > 0 && score > highScore && gameId) {
       setHighScore(score);
-      try {
-        localStorage.setItem(`nextgenn_hs_${game?.id}`, score.toString());
-        localStorage.setItem(`sky_hs_${game?.id}`, score.toString());
-      } catch { }
+      leaderboardApi.submitScore({
+        gameId,
+        score,
+        username: user?.username || 'Player',
+        userId: user?.id || null
+      }).catch(() => { });
+
+      if (user?.id) {
+        cloudSyncApi.syncProgress({
+          userId: user.id,
+          highScores: { [gameId]: score }
+        }).catch(() => { });
+      }
     }
-  }, [score, highScore, game?.id]);
+  }, [score, highScore, gameId, user]);
 
   const { sideGames, moreRelatedGames } = useMemo(() => {
     if (!allGames || !allGames.length) {
@@ -770,28 +789,28 @@ export default function GamePlayerView({
     if (prevVote === 'like') {
       setUserVote(null);
       setLikes(l => Math.max(0, l - 1));
-      try {
-        localStorage.removeItem(`nextgenn_vote_${gameId}`);
-        localStorage.removeItem(`sky_vote_${gameId}`);
-      } catch { }
     } else {
       if (prevVote === 'dislike') {
         setDislikes(d => Math.max(0, d - 1));
       }
       setUserVote('like');
       setLikes(l => l + 1);
-      try {
-        localStorage.setItem(`nextgenn_vote_${gameId}`, 'like');
-        localStorage.setItem(`sky_vote_${gameId}`, 'like');
-      } catch { }
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
     }
 
-    // Call live backend API to persist & broadcast
+    // Call live MySQL backend API to persist vote to games table
     try {
       const data = await gamesApi.voteGame(gameId, nextVote, prevVote || 'none');
       if (typeof data.likes === 'number') setLikes(data.likes);
       if (typeof data.dislikes === 'number') setDislikes(data.dislikes);
+
+      // Persist user vote record to MySQL cloudSave
+      if (user?.id) {
+        cloudSyncApi.syncProgress({
+          userId: user.id,
+          votes: { [gameId]: nextVote === 'none' ? null : nextVote }
+        }).catch(() => { });
+      }
     } catch (err) {
       console.error('Vote API error:', err);
     }
@@ -806,27 +825,27 @@ export default function GamePlayerView({
     if (prevVote === 'dislike') {
       setUserVote(null);
       setDislikes(d => Math.max(0, d - 1));
-      try {
-        localStorage.removeItem(`nextgenn_vote_${gameId}`);
-        localStorage.removeItem(`sky_vote_${gameId}`);
-      } catch { }
     } else {
       if (prevVote === 'like') {
         setLikes(l => Math.max(0, l - 1));
       }
       setUserVote('dislike');
       setDislikes(d => d + 1);
-      try {
-        localStorage.setItem(`nextgenn_vote_${gameId}`, 'dislike');
-        localStorage.setItem(`sky_vote_${gameId}`, 'dislike');
-      } catch { }
     }
 
-    // Call live backend API to persist & broadcast
+    // Call live MySQL backend API to persist vote to games table
     try {
       const data = await gamesApi.voteGame(game.id || gameId, nextVote, prevVote || 'none');
       if (typeof data.likes === 'number') setLikes(data.likes);
       if (typeof data.dislikes === 'number') setDislikes(data.dislikes);
+
+      // Persist user vote record to MySQL cloudSave
+      if (user?.id) {
+        cloudSyncApi.syncProgress({
+          userId: user.id,
+          votes: { [gameId]: nextVote === 'none' ? null : nextVote }
+        }).catch(() => { });
+      }
     } catch (err) {
       console.error('Vote API error:', err);
     }

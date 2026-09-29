@@ -107,12 +107,35 @@ export function updatePageSeo({
 }
 
 /**
+ * Converts a game title or object into a clean SEO URL-friendly slug
+ * e.g. "Need for Race" -> "need-for-race"
+ */
+export function toGameSlug(gameOrTitle) {
+  if (!gameOrTitle) return '';
+  const title = typeof gameOrTitle === 'string'
+    ? gameOrTitle
+    : (gameOrTitle.title || gameOrTitle.name || gameOrTitle.id || '');
+
+  const slug = String(title)
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return slug || (typeof gameOrTitle === 'object' && gameOrTitle.id ? String(gameOrTitle.id).toLowerCase() : '');
+}
+
+/**
  * Generates Schema.org VideoGame JSON-LD object for a specific game
  */
 export function buildGameSchema(game) {
   if (!game) return null;
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://nextgenn.com';
-  const gameUrl = `${baseUrl}/game/${encodeURIComponent(game.id || game._id)}`;
+  const gameSlug = toGameSlug(game);
+  const gameUrl = `${baseUrl}/game/${encodeURIComponent(gameSlug)}`;
   const rawCat = game.category || 'Arcade';
   const catSlug = encodeURIComponent(rawCat.toLowerCase());
   const catName = rawCat.charAt(0).toUpperCase() + rawCat.slice(1);

@@ -23,7 +23,7 @@ import { filterCategoriesWithGames } from './utils/categoryIcons';
 import { sounds } from './utils/audio';
 import { CONFIG } from './config';
 import { gamesApi, categoriesApi, cloudSyncApi } from './services/api';
-import { updatePageSeo, buildGameSchema } from './utils/seo';
+import { updatePageSeo, buildGameSchema, toGameSlug } from './utils/seo';
 
 const { STORAGE_KEYS } = CONFIG;
 
@@ -119,10 +119,13 @@ const KNOWN_STATIC_PAGES = [
   'faq'
 ];
 
-function buildNavUrl(gameId, category, page, search) {
+function buildNavUrl(gameOrSlug, category, page, search) {
   try {
-    if (gameId) {
-      return `/game/${encodeURIComponent(gameId)}`;
+    if (gameOrSlug) {
+      const slug = typeof gameOrSlug === 'object'
+        ? toGameSlug(gameOrSlug)
+        : (toGameSlug(gameOrSlug) || encodeURIComponent(gameOrSlug));
+      return `/game/${slug}`;
     }
     if (search && search.trim()) {
       return `/?q=${encodeURIComponent(search.trim())}`;
@@ -208,29 +211,11 @@ function parseUrlNavState() {
 function App() {
   const initialNav = useMemo(() => parseUrlNavState(), []);
 
-  // Real-time games state with seamless static fallback for offline / fresh browsers
-  const [games, setGames] = useState(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_GAMES);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { }
-    return DEFAULT_STATIC_GAMES;
-  });
+  // Real-time games state loaded directly from MySQL database
+  const [games, setGames] = useState(DEFAULT_STATIC_GAMES);
 
-  // Dynamic live categories from backend/admin with static fallback
-  const [categories, setCategories] = useState(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEYS.CACHED_CATEGORIES);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { }
-    return DEFAULT_STATIC_CATEGORIES;
-  });
+  // Dynamic live categories loaded directly from MySQL database
+  const [categories, setCategories] = useState(DEFAULT_STATIC_CATEGORIES);
 
   const [isLoadingGames, setIsLoadingGames] = useState(false);
 
@@ -286,72 +271,28 @@ function App() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [activeGameCounts, setActiveGameCounts] = useState({});
 
-  const [recentlyPlayed, setRecentlyPlayed] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.RECENT) || localStorage.getItem('sky_recent');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.FAVORITES) || localStorage.getItem('sky_favorites');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [favoritesDrawerOpen, setFavoritesDrawerOpen] = useState(false);
 
-  // Gamification & XP State
-  const [totalXp, setTotalXp] = useState(() => {
-    try {
-      return parseInt(localStorage.getItem('sky_total_xp') || '150', 10);
-    } catch {
-      return 150;
-    }
-  });
+  // Gamification & XP State (Synced with MySQL)
+  const [totalXp, setTotalXp] = useState(150);
+  const [level, setLevel] = useState(1);
+  const [completedQuests, setCompletedQuests] = useState({});
+  const [unlockedBadges, setUnlockedBadges] = useState(['first_play']);
 
-  const [level, setLevel] = useState(() => {
-    try {
-      const savedLvl = parseInt(localStorage.getItem('sky_user_level') || '1', 10);
-      return Math.max(savedLvl, Math.floor(Math.sqrt(totalXp / 100)) + 1);
-    } catch {
-      return 1;
-    }
-  });
-
-  const [completedQuests, setCompletedQuests] = useState(() => {
-    try {
-      const saved = localStorage.getItem('sky_completed_quests');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [unlockedBadges, setUnlockedBadges] = useState(() => {
-    try {
-      const saved = localStorage.getItem('sky_unlocked_badges');
-      return saved ? JSON.parse(saved) : ['first_play'];
-    } catch {
-      return ['first_play'];
-    }
-  });
-
-  // Cloud Save Hydration on Login
+  // Cloud Save Hydration from MySQL on User Login or Identification
   useEffect(() => {
     if (user?.id) {
       cloudSyncApi.getProgress(user.id).then(res => {
         if (res?.cloudSave) {
-          const { favorites: cloudFavs, totalXp: cloudXp, level: cloudLvl, unlockedBadges: cloudBadges, questProgress } = res.cloudSave;
-          if (Array.isArray(cloudFavs) && cloudFavs.length > 0) setFavorites(cloudFavs);
-          if (cloudXp > totalXp) setTotalXp(cloudXp);
-          if (cloudLvl > level) setLevel(cloudLvl);
-          if (Array.isArray(cloudBadges)) setUnlockedBadges(prev => Array.from(new Set([...prev, ...cloudBadges])));
-          if (questProgress) setCompletedQuests(prev => ({ ...prev, ...questProgress }));
+          const { favorites: cloudFavs, recent: cloudRecent, totalXp: cloudXp, level: cloudLvl, unlockedBadges: cloudBadges, questProgress } = res.cloudSave;
+          if (Array.isArray(cloudFavs)) setFavorites(cloudFavs);
+          if (Array.isArray(cloudRecent)) setRecentlyPlayed(cloudRecent);
+          if (typeof cloudXp === 'number') setTotalXp(cloudXp);
+          if (typeof cloudLvl === 'number') setLevel(cloudLvl);
+          if (Array.isArray(cloudBadges) && cloudBadges.length > 0) setUnlockedBadges(cloudBadges);
+          if (questProgress) setCompletedQuests(questProgress);
         }
       }).catch(() => { });
     }
@@ -360,22 +301,14 @@ function App() {
   const handleAwardXp = useCallback((newXp, newLvl, questId = null) => {
     setTotalXp(newXp);
     setLevel(newLvl);
-    try {
-      localStorage.setItem('sky_total_xp', String(newXp));
-      localStorage.setItem('sky_user_level', String(newLvl));
-    } catch { }
 
+    let updatedQuests = completedQuests;
     if (questId) {
-      setCompletedQuests(prev => {
-        const updated = { ...prev, [questId]: true };
-        try {
-          localStorage.setItem('sky_completed_quests', JSON.stringify(updated));
-        } catch { }
-        return updated;
-      });
+      updatedQuests = { ...completedQuests, [questId]: true };
+      setCompletedQuests(updatedQuests);
     }
 
-    // Debounced Cloud Sync
+    // Persist directly to MySQL database
     if (user?.id) {
       cloudSyncApi.syncProgress({
         userId: user.id,
@@ -383,7 +316,7 @@ function App() {
         recent: recentlyPlayed,
         totalXp: newXp,
         level: newLvl,
-        questProgress: completedQuests,
+        questProgress: updatedQuests,
         unlockedBadges
       }).catch(() => { });
     }
@@ -398,19 +331,13 @@ function App() {
 
       if (Array.isArray(liveGames) && liveGames.length > 0) {
         setGames(liveGames);
-        try {
-          localStorage.setItem(STORAGE_KEYS.CACHED_GAMES, JSON.stringify(liveGames));
-        } catch { }
       }
 
       if (Array.isArray(liveCats) && liveCats.length > 0) {
         setCategories(liveCats);
-        try {
-          localStorage.setItem(STORAGE_KEYS.CACHED_CATEGORIES, JSON.stringify(liveCats));
-        } catch { }
       }
     } catch (err) {
-      // Silently keep default or cached games without disrupting UI
+      // Silently keep default games without disrupting UI
     } finally {
       setIsLoadingGames(false);
     }
@@ -419,15 +346,12 @@ function App() {
   useEffect(() => {
     fetchLivePlatformData();
 
-    // Auto-sync in background if backend server is available
+    // Auto-sync games from MySQL in background
     const interval = setInterval(() => {
       gamesApi.getLiveGames()
         .then((data) => {
           if (Array.isArray(data) && data.length > 0) {
             setGames(data);
-            try {
-              localStorage.setItem(STORAGE_KEYS.CACHED_GAMES, JSON.stringify(data));
-            } catch { }
           }
         })
         .catch(() => { });
@@ -440,19 +364,37 @@ function App() {
     let isCancelled = false;
     if (pendingGameId) {
       const pIdStr = String(pendingGameId).toLowerCase();
+      const pSlug = toGameSlug(pendingGameId);
+
       const found = activeGames.find(g =>
+        (g.title && toGameSlug(g.title) === pSlug) ||
         (g.id && String(g.id).toLowerCase() === pIdStr) ||
         (g._id && String(g._id).toLowerCase() === pIdStr) ||
         (g.title && g.title.toLowerCase() === pIdStr)
       );
+
+      const applyGameAndNormalizeUrl = (game) => {
+        if (!game) return;
+        setSelectedGame(game);
+        const cleanSlug = toGameSlug(game);
+        const expectedUrl = `/game/${cleanSlug}`;
+        if (window.location.pathname !== expectedUrl) {
+          window.history.replaceState(
+            { ...(window.history.state || {}), gameId: cleanSlug },
+            '',
+            expectedUrl
+          );
+        }
+      };
+
       if (found) {
-        setSelectedGame(found);
+        applyGameAndNormalizeUrl(found);
       } else if (activeGames.length > 0) {
         // Fallback: Fetch directly from API in case of single game direct link or unlisted active game
         gamesApi.getById(pendingGameId)
           .then(data => {
             if (!isCancelled && data && (data.game || data.id)) {
-              setSelectedGame(data.game || data);
+              applyGameAndNormalizeUrl(data.game || data);
             } else if (!isCancelled) {
               setSelectedGame(null);
             }
@@ -482,31 +424,25 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Sync favorites with MySQL
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
-  }, [favorites]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.USER);
+    if (user?.id) {
+      cloudSyncApi.syncProgress({
+        userId: user.id,
+        favorites
+      }).catch(() => { });
     }
-  }, [user]);
+  }, [favorites, user]);
 
+  // Sync recently played with MySQL
   useEffect(() => {
-    if (activeGames.length > 0) {
-      setRecentlyPlayed(prev => {
-        const filtered = prev.filter(r => activeGames.some(g => String(g.id || g._id) === String(r.id || r._id)));
-        localStorage.setItem(STORAGE_KEYS.RECENT, JSON.stringify(filtered));
-        return filtered;
-      });
+    if (user?.id && recentlyPlayed.length > 0) {
+      cloudSyncApi.syncProgress({
+        userId: user.id,
+        recent: recentlyPlayed
+      }).catch(() => { });
     }
-  }, [activeGames]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.RECENT, JSON.stringify(recentlyPlayed));
-  }, [recentlyPlayed]);
+  }, [recentlyPlayed, user]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -538,7 +474,7 @@ function App() {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nextgenn.com';
 
     if (selectedGame) {
-      const canonical = `${origin}/game/${encodeURIComponent(selectedGame.id || selectedGame._id)}`;
+      const canonical = `${origin}/game/${encodeURIComponent(toGameSlug(selectedGame))}`;
       const gameDesc = selectedGame.description
         ? (selectedGame.description.length > 160 ? `${selectedGame.description.slice(0, 157)}...` : selectedGame.description)
         : `Play ${selectedGame.title} free online in your browser on NextGenn. Fast, responsive ${selectedGame.category || 'Arcade'} game. No downloads needed.`;
@@ -633,12 +569,12 @@ function App() {
   }, []);
 
   const handlePlayGame = useCallback((game) => {
-    const gKey = game.id || game._id || game.title;
+    const slug = toGameSlug(game);
     setSelectedGame(game);
-    setPendingGameId(gKey);
+    setPendingGameId(slug);
 
-    const targetUrl = buildNavUrl(gKey, activeCategory, activePage, searchQuery);
-    window.history.pushState({ gameId: gKey, category: activeCategory, page: activePage }, '', targetUrl);
+    const targetUrl = buildNavUrl(game, activeCategory, activePage, searchQuery);
+    window.history.pushState({ gameId: slug, category: activeCategory, page: activePage }, '', targetUrl);
 
     setRecentlyPlayed(prev => {
       const filtered = prev.filter(g => String(g.id || g._id) !== String(game.id || game._id));

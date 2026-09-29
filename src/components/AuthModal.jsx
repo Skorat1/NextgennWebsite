@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { CONFIG } from '../config';
+import { authApi } from '../services/api';
 
 const { API_BASE } = CONFIG;
 
@@ -408,23 +409,28 @@ export default function AuthModal({ isOpen, onClose, user, onLogin, onLogout }) 
     }
 
     try {
-      const playerUser = {
-        id: 'usr-' + Date.now().toString(36),
-        username: cleanUsername || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : cleanEmail) || 'NextGamer',
-        name: cleanUsername || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : cleanEmail) || 'NextGamer',
-        email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@nextgenn.com`,
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanUsername || cleanEmail)}`,
-        provider: 'email',
-        role: cleanEmail.toLowerCase().includes('admin') ? 'admin' : 'user',
-        status: 'active',
-        createdAt: new Date().toISOString()
-      };
+      let authResponse;
+      if (tab === 'register') {
+        authResponse = await authApi.register({
+          username: cleanUsername,
+          email: cleanEmail,
+          password: cleanPassword
+        });
+      } else {
+        authResponse = await authApi.login(cleanEmail, cleanPassword);
+      }
 
+      if (!authResponse || !authResponse.user) {
+        throw new Error(authResponse?.error || 'Authentication failed');
+      }
+
+      const playerUser = authResponse.user;
       try { sounds.playPowerup(); } catch (err) { }
-      setSuccessMsg(tab === 'register' ? 'Account created successfully!' : 'Signed in successfully!');
+      setSuccessMsg(tab === 'register' ? 'Account created successfully in MySQL!' : 'Signed in successfully!');
 
-      try { localStorage.setItem('nextgenn_user', JSON.stringify(playerUser)); localStorage.setItem('sky_user', JSON.stringify(playerUser)); } catch { }
-      try { localStorage.setItem('nextgenn_token', 'nextgenn_token_' + Date.now()); localStorage.setItem('sky_token', 'sky_token_' + Date.now()); } catch { }
+      if (authResponse.token) {
+        try { localStorage.setItem('sky_token', authResponse.token); } catch { }
+      }
 
       setTimeout(() => {
         onLogin(playerUser);
@@ -437,35 +443,7 @@ export default function AuthModal({ isOpen, onClose, user, onLogin, onLogout }) 
       }, 400);
     } catch (err) {
       setLoading(false);
-      const isNetworkFail = err.name === 'TypeError' || (err.message && (err.message.includes('fetch') || err.message.includes('Network')));
-      if (isNetworkFail) {
-        // Safe offline account registration & login fallback
-        const fallbackUser = {
-          id: 'usr-' + Date.now().toString(36),
-          username: cleanUsername || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : cleanEmail) || 'NextGamer',
-          name: cleanUsername || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : cleanEmail) || 'NextGamer',
-          email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@nextgenn.com`,
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanUsername || cleanEmail)}`,
-          provider: 'email',
-          role: cleanEmail.toLowerCase().includes('admin') ? 'admin' : 'user',
-          status: 'active',
-          createdAt: new Date().toISOString()
-        };
-        try { sounds.playPowerup(); } catch (e2) { }
-        setSuccessMsg(tab === 'register' ? 'Account registered!' : 'Welcome back!');
-        try { localStorage.setItem('sky_user', JSON.stringify(fallbackUser)); } catch { }
-        try { localStorage.setItem('sky_token', 'local_token_' + Date.now()); } catch { }
-        setTimeout(() => {
-          onLogin(fallbackUser);
-          setEmail('');
-          setPassword('');
-          setConfirmPassword('');
-          setUsername('');
-          onClose();
-        }, 400);
-      } else {
-        setGlobalError(err.message || 'Something went wrong. Please check your details.');
-      }
+      setGlobalError(err.message || 'Something went wrong. Please check your details.');
     }
   };
 

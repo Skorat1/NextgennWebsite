@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { Heart, ThumbsUp } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { getGamePreviewVideo, parseVideoSource } from '../utils/videoHelper';
+import { toGameSlug } from '../utils/seo';
 
 function formatCompactCount(num) {
   if (!num || isNaN(num)) return '0';
@@ -127,8 +128,7 @@ const GameCard = memo(function GameCard({
 
   if (!game) return null;
 
-  const gameId = game.id || game._id;
-  const gameHref = `/game/${encodeURIComponent(gameId)}`;
+  const gameHref = `/game/${toGameSlug(game)}`;
 
   return (
     <a

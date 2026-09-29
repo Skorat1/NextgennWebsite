@@ -8,11 +8,19 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/game-proxy': {
-        target: 'http://127.0.0.1:5001',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://127.0.0.1:5001',
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+      '^/sitemap.*': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+      '/robots.txt': {
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       }
     }

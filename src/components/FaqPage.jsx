@@ -4,7 +4,6 @@ import {
   Search,
   X,
   ChevronDown,
-  ChevronUp,
   Gamepad2,
   Zap,
   ShieldCheck,
@@ -19,20 +18,20 @@ import {
   ThumbsDown,
   MessageSquare,
   LifeBuoy,
-  ExternalLink,
   RefreshCw,
-  FolderOpen,
   Award
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
+import { updatePageSeo } from '../utils/seo';
+import './FaqPage.css';
 
 const FAQ_CATEGORIES = [
   { id: 'all', label: 'All Questions', icon: Layers },
   { id: 'general', label: 'General & Play', icon: Gamepad2 },
   { id: 'controls', label: 'Controls & Gamepad', icon: Zap },
   { id: 'troubleshooting', label: 'Performance & Lag', icon: Cpu },
-  { id: 'account', label: 'XP, Progress & Safety', icon: ShieldCheck },
-  { id: 'developers', label: 'Developers & Submissions', icon: Rocket }
+  { id: 'account', label: 'XP & Save Progress', icon: ShieldCheck },
+  { id: 'developers', label: 'Indie Developers', icon: Rocket }
 ];
 
 const FAQ_ITEMS = [
@@ -41,52 +40,52 @@ const FAQ_ITEMS = [
     id: 'free-to-play',
     category: 'general',
     question: 'Is NextGenn completely free to play?',
-    answer: 'Yes, 100% free! There are no hidden fees, mandatory subscriptions, or locked paywalls. You can browse our entire library of games and start playing immediately without ever entering payment information.',
-    highlights: ['Zero paywalls', '100% free catalog', 'No subscription required']
+    answer: 'Yes, 100% free! There are zero hidden fees, subscriptions, or locked paywalls. You can explore our catalog of 5,000+ games and play immediately without ever entering any credit card or payment information.',
+    highlights: ['Zero paywalls', '100% free games catalog', 'No subscription or credit card needed']
   },
   {
     id: 'no-download-needed',
     category: 'general',
-    question: 'Do I need to download or install any software or plugins?',
-    answer: 'No installation or downloads are required. Every game runs natively in your browser using modern WebGL, WebAssembly (Wasm), and HTML5 canvas engines. Simply click any game thumbnail and play within seconds.',
-    highlights: ['Zero downloads', 'Runs in any modern browser', 'Instant startup']
+    question: 'Do I need to download or install any software or extensions?',
+    answer: 'No downloads, installation, or extensions are needed. Every game runs directly inside your web browser using modern WebGL, WebAssembly (Wasm), and HTML5 canvas engines. Click any game card and start playing in less than 2 seconds.',
+    highlights: ['Zero downloads or setup', 'Runs natively in modern browsers', 'Instant 2-second startup']
   },
   {
     id: 'supported-devices',
     category: 'general',
     question: 'Which devices and browsers are supported?',
-    answer: 'NextGenn is designed to run everywhere. Supported devices include Desktop PCs (Windows, macOS, Linux), Laptops, Chromebooks, iPhones, iPads, Android phones, and tablets. Compatible browsers include Google Chrome, Microsoft Edge, Safari, Mozilla Firefox, and Opera.',
-    highlights: ['Cross-platform', 'Full mobile & desktop responsiveness', 'Chromebook friendly']
+    answer: 'NextGenn is engineered for seamless cross-platform performance. Supported devices include Desktop PCs (Windows, macOS, Linux), Laptops, Chromebooks, iPhones, iPads, and Android smartphones. We recommend Google Chrome, Microsoft Edge, Safari, Mozilla Firefox, or Opera.',
+    highlights: ['Cross-platform synchronization', 'Full mobile & desktop responsiveness', 'Optimized for Chromebooks']
   },
   {
     id: 'safety-and-security',
     category: 'general',
-    question: 'Is NextGenn safe for school, work, and younger players?',
-    answer: 'Yes. All titles on NextGenn are sandboxed inside isolated browser iframes, meaning they cannot access your personal files, camera, or install unwanted software. We continuously review game content to ensure safe, malware-free entertainment.',
-    highlights: ['Isolated sandbox runtime', 'No malware risks', 'Family & school friendly']
+    question: 'Is NextGenn safe for school, work, and younger gamers?',
+    answer: 'Yes! All titles on NextGenn run inside sandboxed, isolated browser iframes, meaning they cannot access your files, hardware sensors, or install malicious scripts. We curate every submission to ensure family-friendly, malware-free entertainment.',
+    highlights: ['Strict sandbox isolation', 'No malware or file risks', 'Safe for school & home']
   },
 
   // 2. Controls & Gamepad
   {
     id: 'gamepad-support',
     category: 'controls',
-    question: 'Can I play games using an external gamepad or controller?',
-    answer: 'Yes! NextGenn supports the standard HTML5 Gamepad API. You can connect Xbox Wireless Controllers, PlayStation DualShock/DualSense controllers, Nintendo Switch Pro controllers, or USB gamepads. Plug in or pair your controller via Bluetooth and press any button to begin.',
-    highlights: ['Xbox & PlayStation controller support', 'Automatic detection', 'USB & Bluetooth']
+    question: 'Can I play games using an external controller or gamepad?',
+    answer: 'Yes! NextGenn supports standard HTML5 Gamepad APIs. You can connect Xbox Wireless Controllers, PlayStation DualShock/DualSense controllers, Nintendo Switch Pro controllers, or USB joypads. Connect via Bluetooth or USB cable, press any button on the gamepad, and it is automatically mapped.',
+    highlights: ['Xbox & PlayStation controller ready', 'Instant Bluetooth & USB detection', 'Zero extra drivers needed']
   },
   {
     id: 'mobile-touch-controls',
     category: 'controls',
     question: 'How do touch controls work on mobile devices and tablets?',
     answer: 'Games with mobile support feature built-in virtual on-screen joypads, intuitive swipe gestures, and responsive tap buttons. When you rotate your phone to landscape mode, touch controls automatically calibrate to your screen aspect ratio.',
-    highlights: ['Virtual touch D-pad & buttons', 'Auto-scaling for all screens', 'Landscape & portrait support']
+    highlights: ['Virtual touch D-pad & action buttons', 'Auto-scaling for all mobile screens', 'Landscape & portrait support']
   },
   {
     id: 'custom-keybindings',
     category: 'controls',
-    question: 'Can I change or customize keyboard keybindings?',
-    answer: 'Most action, shooting, and racing games feature their own in-game settings menu (gear icon) where you can remap keys. Standard controls across the platform include W-A-S-D or Arrow Keys for movement, Spacebar for jump/action, and Left Mouse Button to interact.',
-    highlights: ['Standard WASD / Arrow keys', 'In-game settings remapping', 'Mouse & keyboard precision']
+    question: 'Can I customize or rebind keyboard controls?',
+    answer: 'Most action, shooting, and racing titles feature an in-game settings menu (gear icon) where you can remap keyboard bindings. The standard universal layout across the platform is W-A-S-D or Arrow Keys for steering/movement, Spacebar for jump/action, and Left Mouse Click to aim or attack.',
+    highlights: ['Standard WASD / Arrow keys movement', 'In-game remapping menus', 'High-precision mouse aiming']
   },
 
   // 3. Performance & Troubleshooting
@@ -94,22 +93,22 @@ const FAQ_ITEMS = [
     id: 'lag-fps-drops',
     category: 'troubleshooting',
     question: 'Why is a game lagging or dropping frames, and how can I fix it?',
-    answer: 'Sluggish performance is usually caused by browser hardware acceleration or background applications. To fix it: 1) Enable "Hardware Acceleration" in your browser settings; 2) Close heavy browser tabs like video streams; 3) Update your graphics card drivers; 4) Ensure your device is not in battery saver mode.',
-    highlights: ['Enable hardware acceleration', 'Close background tabs', 'Switch off battery saver']
+    answer: 'Performance hiccups are typically caused by browser graphics acceleration settings or heavy background tabs. To ensure 60+ FPS: 1) Turn on "Use Hardware Acceleration" in your browser settings; 2) Close demanding background video streams or downloads; 3) Disable battery saver mode on laptops and mobile devices.',
+    highlights: ['Enable hardware acceleration', 'Close resource-heavy tabs', 'Turn off battery saver mode']
   },
   {
     id: 'black-screen-loading-issue',
     category: 'troubleshooting',
     question: 'What should I do if a game gets stuck on a black screen or loading loop?',
-    answer: 'If a game stalls while loading assets: 1) Perform a hard refresh using Ctrl + F5 (Windows) or Cmd + Shift + R (Mac); 2) If you use an aggressive ad-blocker or script blocker, try temporarily whitelisting NextGenn as some ad blockers block legitimate WebGL game script frames; 3) Clear your browser cache for the site.',
-    highlights: ['Hard refresh (Ctrl + F5)', 'Whitelist from strict script blockers', 'Clear cached game files']
+    answer: 'If game assets stall during loading: 1) Perform a hard cache refresh using Ctrl + F5 (Windows) or Cmd + Shift + R (Mac); 2) If you are using a strict third-party ad-blocker or script filter, temporarily whitelist NextGenn as some filters inadvertently block legitimate WebGL game script frames; 3) Clear browser cached files.',
+    highlights: ['Hard refresh (Ctrl + F5)', 'Whitelist from strict script blockers', 'Clear browser temporary cache']
   },
   {
     id: 'offline-mode',
     category: 'troubleshooting',
-    question: 'Can I play NextGenn games without an internet connection?',
-    answer: 'NextGenn provides Progressive Web App (PWA) caching for UI menus and static assets. However, because games stream rich WebGL assets, audio, and physics libraries, an active internet connection is recommended for optimal gameplay and cloud save synchronization.',
-    highlights: ['Fast PWA caching', 'Best experienced online', 'Instant reconnect']
+    question: 'Can I play NextGenn games without an active internet connection?',
+    answer: 'NextGenn provides Progressive Web App (PWA) caching for UI menus, icons, and platform assets. However, because high-fidelity games stream WebGL assets, audio libraries, and physics data, an active internet connection is recommended for optimal gameplay and live XP synchronization.',
+    highlights: ['Ultra-fast PWA caching', 'Best experienced with live connection', 'Instant reconnect on drop']
   },
 
   // 4. XP, Progress & Safety
@@ -117,49 +116,72 @@ const FAQ_ITEMS = [
     id: 'xp-leveling-system',
     category: 'account',
     question: 'How does the XP, leveling, and quest system work?',
-    answer: 'Every game session you launch awards you +25 XP. Discovering new games, favoriting titles, and playing consistently earns you bonus XP towards higher gamer levels (Rookie, Adept, Veteran, Master). Your level and badge titles appear in your gamer card!',
-    highlights: ['+25 XP per game play', 'Gamer ranks and levels', 'Achievement badges']
+    answer: 'Every game session you launch awards you +25 XP. Discovering new titles, favoriting games, and playing consistently earns you bonus XP towards higher gamer ranks (Rookie, Adept, Veteran, Master). Your rank, level, and unlocked achievement badges are proudly shown on your profile card!',
+    highlights: ['+25 XP per game play session', 'Unlockable gamer ranks & titles', 'Achievement milestone badges']
   },
   {
     id: 'save-progress-cloud',
     category: 'account',
     question: 'How is my game progress, high scores, and favorites saved?',
-    answer: 'NextGenn automatically saves your favorites, recently played games, high scores, and XP progress directly in your browser local storage. When you sign in to your NextGenn account, your progress is seamlessly synchronized to our secure cloud database.',
-    highlights: ['Instant local auto-save', 'Cross-device cloud synchronization', 'Favorites & recent history']
+    answer: 'NextGenn automatically saves your favorites, recently played history, high scores, and XP progress directly in your browser local storage. When you sign in to your NextGenn account, your achievements are seamlessly synchronized to our secure cloud database across all your devices.',
+    highlights: ['Instant local auto-save', 'Cross-device cloud synchronization', 'Favorites & recent history backup']
   },
   {
     id: 'account-privacy',
     category: 'account',
     question: 'What personal data do you collect, and can I delete my account?',
-    answer: 'We believe in strict data privacy. We only collect basic profile details (username, email) necessary to authenticate you and sync your game saves. We never sell your data to third parties. You can request complete deletion of your account and saves at any time.',
-    highlights: ['Zero data selling', 'Strict GDPR compliance', 'One-click account deletion']
+    answer: 'We believe in strict, honest data privacy. We only collect basic profile details (username, email) necessary to authenticate you and sync your game saves. We never sell your personal information to third parties. You can request complete deletion of your account and data at any time.',
+    highlights: ['Zero personal data selling', 'Strict GDPR & CCPA compliance', 'One-click account deletion available']
   },
 
   // 5. Developers & Submissions
   {
     id: 'developer-submissions',
     category: 'developers',
-    question: 'How can game developers submit and publish their games on NextGenn?',
-    answer: 'We actively partner with indie developers and game studios! You can submit your HTML5 or WebGL game link via our Developer Portal. Our curation team will review the game for stability and content guidelines within 48 to 72 hours.',
-    highlights: ['Free submission', 'Direct audience reach', 'Fast 48-72h editorial review']
+    question: 'How can indie game developers publish their games on NextGenn?',
+    answer: 'We actively welcome indie developers and gaming studios! You can submit your HTML5 or WebGL game link for free via our Developer Portal. Our curation team will review the game for stability and content guidelines within 48 to 72 hours, connecting you with thousands of active players.',
+    highlights: ['100% free submission', 'Reach thousands of daily players', 'Fast 48-72h editorial review turnaround']
   },
   {
     id: 'supported-game-engines',
     category: 'developers',
     question: 'What game engines and export formats are accepted?',
-    answer: 'We accept games built in Unity (WebGL HTML5 export), Godot (HTML5), Construct 3, Phaser, PlayCanvas, Defold, GameMaker, or custom vanilla JavaScript and HTML5 canvas engines. Games must be hosted on an HTTPS-compliant server.',
-    highlights: ['Unity & Godot WebGL', 'Construct 3 & Phaser', 'HTTPS requirements']
+    answer: 'We accept games built with Unity (WebGL HTML5 export), Godot (HTML5), Construct 3, Phaser, PlayCanvas, Defold, GameMaker, or custom vanilla JavaScript and HTML5 canvas engines. Games must be hosted on an HTTPS-compliant server.',
+    highlights: ['Unity & Godot WebGL', 'Construct 3, Phaser & Canvas', 'HTTPS secure hosting required']
   }
 ];
 
 export default function FaqPage({ onBackToHome, onNavigate }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [openItems, setOpenItems] = useState({ 'free-to-play': true });
+  const [openItems, setOpenItems] = useState({ 'free-to-play': true, 'lag-fps-drops': false });
   const [helpfulFeedback, setHelpfulFeedback] = useState({});
 
+  // Dynamic SEO with FAQPage Schema.org structured data
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://nextgenn.com';
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ_ITEMS.slice(0, 10).map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer
+        }
+      }))
+    };
+
+    updatePageSeo({
+      title: 'Frequently Asked Questions & Help Center - NextGenn',
+      description: 'Find answers about NextGenn free browser games, controller setup, lag troubleshooting, cloud save progress, and indie developer submissions.',
+      canonicalUrl: `${origin}/faq`,
+      type: 'website',
+      jsonLd: faqSchema
+    });
   }, []);
 
   const handleNav = (page) => {
@@ -221,7 +243,7 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
   };
 
   return (
-    <div className="custom-static-page-container faq-pro-page">
+    <div className="faq-pro-container">
       {/* Top Breadcrumb & Back Action */}
       <div className="faq-top-bar">
         <button className="faq-back-btn" onClick={() => handleNav('home')}>
@@ -229,63 +251,64 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
           <span>Back to Games</span>
         </button>
         <div className="faq-breadcrumb">
-          <span onClick={() => handleNav('home')} className="crumb-link">Home</span>
-          <span className="crumb-sep">/</span>
-          <span className="crumb-current">Frequently Asked Questions</span>
+          <span onClick={() => handleNav('home')} className="faq-crumb-link">Home</span>
+          <span className="faq-crumb-sep">/</span>
+          <span className="faq-crumb-current">Frequently Asked Questions</span>
         </div>
       </div>
 
       {/* Hero Showcase Header */}
-      <section className="about-hero-box faq-hero-card">
-        <div className="about-hero-glow"></div>
-        <div className="about-hero-inner">
-          <div className="about-status-chip">
-            <span className="live-dot"></span>
-            <span>NEXTGENN SUPPORT &amp; HELP CENTER</span>
+      <section className="faq-hero-section">
+        <div className="faq-hero-orb-1" />
+        <div className="faq-hero-orb-2" />
+        <div className="faq-hero-inner">
+          <div className="faq-status-badge">
+            <span className="faq-status-dot" />
+            <span>NextGenn Support &amp; Knowledge Base</span>
           </div>
 
-          <h1 className="about-hero-headline">
-            Frequently Asked Questions
+          <h1 className="faq-hero-title">
+            Frequently Asked <span className="faq-hero-title-highlight">Questions</span>
           </h1>
 
-          <p className="about-hero-subtitle">
-            Find fast answers to common questions about controls, controllers, performance, account saves, and game submissions.
+          <p className="faq-hero-subtitle">
+            Find immediate answers regarding gameplay, gamepads, performance optimization, cloud saves, and developer publishing.
           </p>
 
           {/* Interactive Search Bar */}
-          <div className="faq-search-wrapper">
-            <Search size={20} className="faq-search-icon" />
+          <div className="faq-search-box">
+            <Search size={18} className="faq-search-icon" />
             <input
               type="text"
               className="faq-search-input"
-              placeholder="Search for answers (e.g. controller, lag, free, save, mobile, submit)..."
+              placeholder="Search answers (e.g. controller, lag, free, cloud save, mobile, submit)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button
-                className="faq-search-clear-btn"
+                className="faq-search-clear"
                 onClick={() => {
                   sounds.playClick();
                   setSearchQuery('');
                 }}
                 aria-label="Clear search query"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
           </div>
 
-          {/* Quick Keyword Pills */}
-          <div className="faq-quick-tags">
-            <span className="quick-tags-label">Quick topics:</span>
-            {['Controller', 'Lag', 'Mobile', 'Save Progress', 'Free', 'Developer'].map((tag) => (
+          {/* Quick Keyword Topics */}
+          <div className="faq-quick-topics">
+            <span className="faq-quick-label">Popular topics:</span>
+            {['Controller', 'Lag & FPS', 'Mobile Touch', 'Cloud Save', 'Free Play', 'Developers'].map((tag) => (
               <button
                 key={tag}
-                className="faq-quick-tag-chip"
+                className="faq-topic-chip"
                 onClick={() => {
                   sounds.playClick();
-                  setSearchQuery(tag.toLowerCase());
+                  setSearchQuery(tag.split(' ')[0].toLowerCase());
                 }}
               >
                 {tag}
@@ -296,8 +319,8 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
       </section>
 
       {/* Category Tabs & Controls Row */}
-      <div className="faq-filter-controls-row">
-        <div className="faq-category-pills custom-scrollbar">
+      <div className="faq-controls-bar">
+        <div className="faq-category-nav">
           {FAQ_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const count = cat.id === 'all'
@@ -308,53 +331,54 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
             return (
               <button
                 key={cat.id}
-                className={`faq-cat-pill ${isActive ? 'active' : ''}`}
+                className={`faq-nav-pill ${isActive ? 'active' : ''}`}
                 onClick={() => {
                   sounds.playClick();
                   setActiveCategory(cat.id);
                 }}
               >
-                <Icon size={16} />
+                <Icon size={15} />
                 <span>{cat.label}</span>
-                <span className="faq-cat-pill-count">{count}</span>
+                <span className="faq-pill-count">{count}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Expand / Collapse All */}
-        <div className="faq-view-actions">
+        {/* Expand / Collapse Actions */}
+        <div className="faq-toggle-actions">
           <button
-            className="faq-action-text-btn"
+            className="faq-text-action-btn"
             onClick={() => handleToggleAll(true)}
             title="Expand all questions"
           >
             <ChevronDown size={14} />
             <span>Expand All</span>
           </button>
-          <span className="faq-action-divider">|</span>
+          <span className="faq-action-sep">|</span>
           <button
-            className="faq-action-text-btn"
+            className="faq-text-action-btn"
             onClick={() => handleToggleAll(false)}
             title="Collapse all questions"
           >
-            <ChevronUp size={14} />
             <span>Collapse All</span>
           </button>
         </div>
       </div>
 
       {/* Main FAQ Accordion List */}
-      <section className="faq-accordion-section">
+      <section>
         {filteredFaqs.length === 0 ? (
-          <div className="faq-empty-state">
-            <div className="faq-empty-icon-wrap">
-              <HelpCircle size={36} />
+          <div className="faq-empty-box">
+            <div className="faq-empty-icon">
+              <HelpCircle size={32} />
             </div>
-            <h3>No matching questions found</h3>
-            <p>We couldn't find any questions matching "{searchQuery}". Try using different keywords or browse all categories.</p>
+            <h3 className="faq-empty-title">No matching questions found</h3>
+            <p className="faq-empty-desc">
+              We couldn't find any questions matching "{searchQuery}". Try using different keywords or browse our categories.
+            </p>
             <button
-              className="about-primary-btn"
+              className="faq-reset-btn"
               onClick={() => {
                 sounds.playClick();
                 setSearchQuery('');
@@ -366,7 +390,7 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
             </button>
           </div>
         ) : (
-          <div className="faq-cards-grid">
+          <div className="faq-cards-list">
             {filteredFaqs.map((item, idx) => {
               const isOpen = Boolean(openItems[item.id]);
               const feedback = helpfulFeedback[item.id];
@@ -375,45 +399,45 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
               return (
                 <article
                   key={item.id}
-                  className={`faq-pro-card ${isOpen ? 'open' : ''}`}
+                  className={`faq-card ${isOpen ? 'open' : ''}`}
                 >
                   {/* Card Header / Trigger */}
                   <button
                     type="button"
-                    className="faq-pro-card-header"
+                    className="faq-card-header"
                     onClick={() => toggleItem(item.id)}
                     aria-expanded={isOpen}
                   >
-                    <div className="faq-pro-card-header-left">
-                      <span className="faq-item-num">
+                    <div className="faq-card-header-left">
+                      <span className="faq-index-number">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
-                      <div className="faq-item-title-wrap">
+                      <div className="faq-question-wrap">
                         {matchedCat && (
-                          <span className={`faq-category-badge badge-${item.category}`}>
+                          <span className="faq-cat-tag">
                             {matchedCat.label}
                           </span>
                         )}
-                        <h2 className="faq-item-question">{item.question}</h2>
+                        <h2 className="faq-question-text">{item.question}</h2>
                       </div>
                     </div>
 
-                    <div className={`faq-expand-circle ${isOpen ? 'rotated' : ''}`}>
-                      <ChevronDown size={18} />
+                    <div className={`faq-chevron-wrap ${isOpen ? 'rotated' : ''}`}>
+                      <ChevronDown size={17} />
                     </div>
                   </button>
 
                   {/* Card Expanded Content */}
                   {isOpen && (
-                    <div className="faq-pro-card-body">
-                      <p className="faq-item-answer">{item.answer}</p>
+                    <div className="faq-card-body">
+                      <p className="faq-answer-text">{item.answer}</p>
 
                       {/* Key Highlight Badges */}
                       {item.highlights && item.highlights.length > 0 && (
-                        <div className="faq-highlights-row">
+                        <div className="faq-highlights-list">
                           {item.highlights.map((hl, hIdx) => (
-                            <div key={hIdx} className="faq-highlight-chip">
-                              <CheckCircle2 size={13} className="text-emerald" />
+                            <div key={hIdx} className="faq-highlight-pill">
+                              <CheckCircle2 size={13} />
                               <span>{hl}</span>
                             </div>
                           ))}
@@ -421,31 +445,31 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
                       )}
 
                       {/* Helpful Feedback Bar */}
-                      <div className="faq-feedback-bar">
-                        <span className="feedback-prompt">Was this helpful?</span>
+                      <div className="faq-feedback-widget">
+                        <span className="faq-feedback-prompt">Was this answer helpful?</span>
                         {feedback ? (
-                          <span className="feedback-thank-you">
-                            <CheckCircle2 size={14} className="text-emerald" />
+                          <span className="faq-vote-thanks">
+                            <CheckCircle2 size={14} />
                             <span>Thank you for your feedback!</span>
                           </span>
                         ) : (
-                          <div className="feedback-btn-group">
+                          <div className="faq-feedback-buttons">
                             <button
                               type="button"
-                              className="feedback-btn"
+                              className="faq-vote-btn"
                               onClick={() => handleFeedback(item.id, true)}
                               title="Yes, this helped me"
                             >
-                              <ThumbsUp size={13} />
+                              <ThumbsUp size={12} />
                               <span>Yes</span>
                             </button>
                             <button
                               type="button"
-                              className="feedback-btn"
+                              className="faq-vote-btn"
                               onClick={() => handleFeedback(item.id, false)}
                               title="No, I need more help"
                             >
-                              <ThumbsDown size={13} />
+                              <ThumbsDown size={12} />
                               <span>No</span>
                             </button>
                           </div>
@@ -461,27 +485,29 @@ export default function FaqPage({ onBackToHome, onNavigate }) {
       </section>
 
       {/* Still Need Assistance CTA Banner */}
-      <section className="faq-help-cta-box">
-        <div className="faq-cta-left">
-          <div className="faq-cta-icon-box">
-            <LifeBuoy size={28} />
+      <section className="faq-support-cta">
+        <div className="faq-cta-content">
+          <div className="faq-cta-icon-wrap">
+            <LifeBuoy size={26} />
           </div>
           <div>
-            <h3>Still have questions or facing an issue?</h3>
-            <p>Our support team and developer community are ready to assist you anytime.</p>
+            <h3 className="faq-cta-heading">Still have questions or facing an issue?</h3>
+            <p className="faq-cta-desc">
+              Our support team and developer community are ready to assist you anytime.
+            </p>
           </div>
         </div>
 
-        <div className="faq-cta-actions">
+        <div className="faq-cta-buttons">
           <button
-            className="about-primary-btn"
+            className="faq-cta-primary-btn"
             onClick={() => handleNav('contact')}
           >
             <MessageSquare size={16} />
             <span>Contact Support</span>
           </button>
           <button
-            className="about-secondary-btn"
+            className="faq-cta-secondary-btn"
             onClick={() => handleNav('developers')}
           >
             <Rocket size={16} />

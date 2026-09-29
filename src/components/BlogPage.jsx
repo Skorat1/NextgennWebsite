@@ -7,7 +7,7 @@ import {
   Share2, Heart, ArrowUpRight, Newspaper, Users, Play, Check, Copy, ExternalLink
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
-import { updatePageSeo } from '../utils/seo';
+import { updatePageSeo, toGameSlug } from '../utils/seo';
 
 function formatPostDate(post) {
   if (!post) return '';
@@ -384,8 +384,9 @@ function ArticleDetail({ post, onBack, onPlayGame, allGames = [] }) {
     // 2. Search platform games
     const matched = (allGames || []).find(g => {
       const gId = String(g.id || g._id || '').toLowerCase();
-      if (extractedGameId && gId === extractedGameId) return true;
-      if (cleanUrl === gId) return true;
+      const gSlug = toGameSlug(g.title);
+      if (extractedGameId && (gId === extractedGameId || gSlug === extractedGameId)) return true;
+      if (cleanUrl === gId || cleanUrl === gSlug) return true;
       if (g.gameUrl && g.gameUrl.toLowerCase() === cleanUrl) return true;
       if (post.gameTitle && g.title && g.title.toLowerCase() === post.gameTitle.trim().toLowerCase()) return true;
       if (g.title && cleanTitle && (g.title.toLowerCase() === cleanTitle || cleanTitle.includes(g.title.toLowerCase()))) return true;
