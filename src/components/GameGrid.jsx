@@ -5,9 +5,7 @@ import { sounds } from '../utils/audio';
 import { renderCategorySvgIcon, getDimmedCategoryColor } from '../utils/categoryIcons';
 
 const DEFAULT_QUICK_CATEGORIES = [
-
 ];
-
 const BATCH_SIZE = 28;
 
 const GameGrid = memo(function GameGrid({
